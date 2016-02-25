@@ -9,7 +9,6 @@
 #include "Pack.h"
 #include "Server.h"
 #include "Connector.h"
-#include "Public_Define.h"
 
 Pack::Pack(void):server_(0),connector_(0) { }
 
@@ -74,7 +73,7 @@ int Pack::process(void) {
 	while (1) {
 		process_packing_list();
 		process_drop();
-		Time_Value::sleep(SLEEP_TIME);
+		Time_Value::sleep(Time_Value(0, 100));
 	}
 	return 0;
 }
