@@ -38,7 +38,7 @@ int Accept::init() {
 }
 
 int Accept::fini(void) {
-	LOG_DEBUG("close listenfd = %d", listenfd_);
+	LIB_LOG_DEBUG("close listenfd = %d", listenfd_);
 	::close(listenfd_);
 	return 0;
 }
@@ -47,8 +47,7 @@ void Accept::server_listen(void) {
 	struct sockaddr_in serveraddr;
 
 	if ((listenfd_ = ::socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		LOG_SYS("socket");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, socket fatal, listenfd = %d", listenfd_);
 	}
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
@@ -58,45 +57,31 @@ void Accept::server_listen(void) {
 
 	int flag = 1;
 	if (::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) == -1) {
-		LOG_SYS("setsockopt SO_REUSEADDR");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, setsockopt SO_REUSEADDR fatal, listenfd = %d", listenfd_);
 	}
 
 	int peer_buf_len = 2 * 1024 * 1024;
 	if (::setsockopt(listenfd_, SOL_SOCKET, SO_SNDBUF, &peer_buf_len, sizeof(peer_buf_len)) == -1) {
-		LOG_SYS("setsockopt SO_REUSEADDR");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, setsockopt SO_SNDBUF fatal, listenfd = %d", listenfd_);
 	}
 	if (::setsockopt(listenfd_, SOL_SOCKET, SO_RCVBUF, &peer_buf_len, sizeof(peer_buf_len)) == -1) {
-		LOG_SYS("setsockopt SO_REUSEADDR");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, setsockopt SO_RCVBUF fatal, listenfd = %d", listenfd_);
 	}
-
-	//socklen_t len= sizeof(int);
-	//int i = ::getsockopt(listenfd_, SOL_SOCKET, SO_SNDTIMEO, (char*)&so_send_timeo, &len);
-	//int so_send_timeo = 100;
 
 	struct timeval timeout = {1, 0};//0.1s
 	if (::setsockopt(listenfd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1) {
-		LOG_SYS("setsockopt SO_REUSEADDR");
-		LOG_ABORT();
-	}/*
-	if (::setsockopt(listenfd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
-		LOG_SYS("setsockopt SO_REUSEADDR");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, setsockopt SO_SNDTIMEO fatal, listenfd = %d", listenfd_);
 	}
-	*/
 
 	if (::bind(listenfd_, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) == -1) {
-		LOG_SYS("bind");
-		LOG_ABORT();
-	}
-	if (::listen(listenfd_, 1024) == -1) {
-		LOG_SYS("listen");
-		LOG_ABORT();
+		LIB_LOG_FATAL("server_listen, bind fatal, listenfd = %d", listenfd_);
 	}
 
-	LOG_DEBUG("listen at %d", port_);
+	if (::listen(listenfd_, 1024) == -1) {
+		LIB_LOG_FATAL("server_listen, listen fatal, listenfd = %d", listenfd_);
+	}
+
+	LIB_LOG_DEBUG("listen at %d", port_);
 }
 
 void Accept::server_accept(void) {
@@ -109,43 +94,43 @@ void Accept::server_accept(void) {
 		memset(&client_addr, 0, sizeof(client_addr));
 		addr_len = sizeof(client_addr);
 		if ((connfd = ::accept4(listenfd_, (struct sockaddr *) &client_addr, &addr_len, SOCK_NONBLOCK | SOCK_CLOEXEC)) == -1) {
-			LOG_SYS("accept");
+			LIB_LOG_INFO("server_accept, accpet fail, listenfd = %d", listenfd_);
 			continue;
 		}
 		struct linger so_linger;
 		so_linger.l_onoff = 1;
 		so_linger.l_linger = 0;
 		if (::setsockopt(connfd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) < 0) {
-			LOG_SYS("setsockopt linger");
+			LIB_LOG_INFO("server_accept setsockopt SO_LINGER fail, connfd = %d", connfd);
 			continue;
 		}
 
 /** turn on/off TCP Nagel algorithm
 		int nodelay_on=1;
 		if (::setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &nodelay_on, sizeof(nodelay_on)) < 0) {
-			LOG_SYS("setsockopt nodelay");
+			LIB_LOG_INFO("setsockopt nodelay");
 		}
 */
 
 		memset(client_ip, 0, sizeof(client_ip));
 		if (::inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip)) == NULL) {
-			LOG_SYS("inet_ntop");
+			LIB_LOG_INFO("server_accept inet_ntop fail, client_ip:%s", client_ip);
 			continue;
 		}
 
-		LOG_DEBUG("client ip = [%s], port = %d", client_ip, ntohs(client_addr.sin_port));
+		LIB_LOG_DEBUG("client_ip = %s, port = %d", client_ip, ntohs(client_addr.sin_port));
 
 		accept_svc(connfd);
 	}
 }
 
 int Accept::accept_svc(int connfd) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 void Accept::run_handler(void) {
-	LOG_DEBUG("start acceptor");
+	LIB_LOG_DEBUG("start listen and accept");
 	server_listen();
 	server_accept();
 }

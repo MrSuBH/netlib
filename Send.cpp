@@ -31,7 +31,7 @@ void Send::set(Server *server, Connector *connector, Time_Value &interval) {
 
 int Send::init(void) {
 	if ((reactor_ = new Epoll_Watcher) == 0) {
-		LOG_SYS_ABORT("Sender new Epoll_Watcher");
+		LIB_LOG_FATAL("Sender new Epoll_Watcher");
 	}
 	return 0;
 }
@@ -46,7 +46,7 @@ int Send::fini(void) {
 }
 
 void Send::run_handler(void) {
-	LOG_DEBUG("start sender");
+	LIB_LOG_DEBUG("start sender");
 	register_self_timer();
 	reactor_->loop();
 	return ;
@@ -54,24 +54,24 @@ void Send::run_handler(void) {
 
 /// 获取、释放一个buf
 Block_Buffer *Send::pop_block(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Send::push_block(int cid, Block_Buffer *buf) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Send::push_data_block_with_len(int cid, Block_Buffer &rbuf) {
 	if (rbuf.readable_bytes() <= 0) {
-		LOG_USER_TRACE("block readable_bytes = %ul.", rbuf.readable_bytes());
+		LIB_LOG_TRACE("block readable_bytes = %ul.", rbuf.readable_bytes());
 		return -1;
 	}
 
 	Block_Buffer *buf = pop_block(cid);
 	if (! buf) {
-		LOG_USER_TRACE("buf == 0");
+		LIB_LOG_TRACE("buf == 0");
 		return -1;
 	}
 
@@ -138,7 +138,7 @@ int Send::unregister_svc(Svc *svc) {
 
 int Send::register_self_timer(void) {
 	if (interval_ == Time_Value::zero) {
-		LOG_ABORT("interval_ == Time_Value::zero");
+		LIB_LOG_FATAL("interval_ == Time_Value::zero");
 		return -1;
 	}
 
@@ -151,12 +151,12 @@ int Send::register_self_timer(void) {
 }
 
 int Send::drop_handler(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 Svc *Send::find_svc(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 

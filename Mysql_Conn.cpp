@@ -42,13 +42,13 @@ int Mysql_DB_Conn::Init() {
 			conn->setSchema(m_pDBPool->GetDBName());
 			stmt = conn->createStatement();
 			if (conn->isClosed()) {
-				LOG_DEBUG("connect mysql error, url = [%s], user = [%s], pw = [%s]", url.c_str(), m_pDBPool->GetUsername().c_str(), m_pDBPool->GetPasswrod().c_str());
+				LIB_LOG_DEBUG("connect mysql error, url = [%s], user = [%s], pw = [%s]", url.c_str(), m_pDBPool->GetUsername().c_str(), m_pDBPool->GetPasswrod().c_str());
 				return 1;
 			}
 	}
 	catch (sql::SQLException &e) {
 			int err_code = e.getErrorCode();
-			LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+			LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 			return 2;
 	}
 
@@ -62,7 +62,7 @@ sql::ResultSet* Mysql_DB_Conn::ExecuteQuery(const char* sql_query) {
 		res = stmt->executeQuery(sql_query);
 	}catch (sql::SQLException &e) {
 			int err_code = e.getErrorCode();
-			LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+			LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 			return NULL;
 	}
 
@@ -76,7 +76,7 @@ int Mysql_DB_Conn::ExecuteUpdate(const char* sql_query) {
 		ret = stmt->executeUpdate(sql_query);
 	}catch (sql::SQLException &e) {
 		int err_code = e.getErrorCode();
-		LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 		return -1;
 	}
 
@@ -90,7 +90,7 @@ bool Mysql_DB_Conn::Execute(const char* sql_query) {
 		ret = stmt->execute(sql_query);
 	}catch (sql::SQLException &e) {
 		int err_code = e.getErrorCode();
-		LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 		return -1;
 	}
 
@@ -142,7 +142,7 @@ int Mysql_DB_Pool::Init() {
 		m_free_list.push_back(pDBConn);
 	}
 
-	LOG_DEBUG("db pool: %s, size: %d", m_pool_name.c_str(), (int)m_free_list.size());
+	LIB_LOG_DEBUG("db pool: %s, size: %d", m_pool_name.c_str(), (int)m_free_list.size());
 	return 0;
 }
 
@@ -162,7 +162,7 @@ Mysql_DB_Conn* Mysql_DB_Pool::GetDBConn() {
 			} else {
 				m_free_list.push_back(pDBConn);
 				m_db_cur_conn_cnt++;
-				LOG_DEBUG("new db connection: %s, conn_cnt: %d", m_pool_name.c_str(), m_db_cur_conn_cnt);
+				LIB_LOG_DEBUG("new db connection: %s, conn_cnt: %d", m_pool_name.c_str(), m_db_cur_conn_cnt);
 			}
 		}
 	}
@@ -216,7 +216,7 @@ int Mysql_DB_Manager::Init(std::string& db_host, int db_port, std::string& db_us
 
 		if (pDBPool->Init()) {
 			delete pDBPool;
-			LOG_ABORT("init db instance failed db_host:%s, db_port:%d, db_username:%s, db_password:%s, db_name:%s, pool_name:%s",
+			LIB_LOG_FATAL("init db instance failed db_host:%s, db_port:%d, db_username:%s, db_password:%s, db_name:%s, pool_name:%s",
 					db_host.c_str(), db_port, db_username.c_str(), db_password.c_str(), db_name.c_str(), pool_name.c_str());
 			return -1;
 		}

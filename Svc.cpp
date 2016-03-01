@@ -45,42 +45,42 @@ void Svc::set_connector(Connector *connector) {
 }
 
 Block_Buffer *Svc::pop_block(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::push_block(int cid, Block_Buffer *block) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::register_recv_handler(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::unregister_recv_handler(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::register_send_handler(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::unregister_send_handler(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::recv_handler(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Svc::close_handler(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
@@ -99,7 +99,7 @@ int Svc::handle_close(void) {
 
 int Svc::close_fd(void) {
 	if (is_closed_) {
-		LOG_DEBUG("close fd = %d", this->get_fd());
+		LIB_LOG_DEBUG("close fd = %d", this->get_fd());
 		::close(this->get_fd());
 	}
 	return 0;
@@ -110,7 +110,7 @@ int Svc::get_peer_addr(std::string &ip, int &port) {
 	socklen_t len = sizeof(sa);
 
 	if (::getpeername(this->get_fd(), (struct sockaddr *)&sa, &len) < 0) {
-		LOG_USER_TRACE("getpeername wrong, fd:%d", this->get_fd());
+		LIB_LOG_TRACE("getpeername wrong, fd:%d", this->get_fd());
 		return -1;
 	}
 
@@ -128,7 +128,7 @@ int Svc::get_local_addr(std::string &ip, int &port) {
 	socklen_t len = sizeof(sa);
 
 	if (::getsockname(this->get_fd(), (struct sockaddr *)&sa, &len) < 0) {
-		LOG_USER_TRACE("getsockname wrong, fd:%d", this->get_fd());
+		LIB_LOG_TRACE("getsockname wrong, fd:%d", this->get_fd());
 		return -1;
 	}
 
@@ -147,7 +147,7 @@ int Svc::recv_data(void) {
 
 	Block_Buffer *buf = pop_block(cid_);
 	if (! buf) {
-		LOG_USER_TRACE("pop_block return 0");
+		LIB_LOG_TRACE("pop_block return 0");
 		return -1;
 	}
 	buf->reset();
@@ -163,14 +163,14 @@ int Svc::recv_data(void) {
 			if (errno == EWOULDBLOCK)
 				break;
 
-			LOG_SYS("role_id:%ld read", role_id_);
+			LIB_LOG_INFO("role_id:%ld read", role_id_);
 
 			push_block(cid_, buf);
 			handle_close();
 
 			return 0;
 		} else if (n == 0) { /// EOF
-			LOG_DEBUG("role_id:%ld fd=%d, read return 0, EOF close", role_id_, get_fd());
+			LIB_LOG_DEBUG("role_id:%ld fd=%d, read return 0, EOF close", role_id_, get_fd());
 
 			push_block(cid_, buf);
 			handle_close();
@@ -181,7 +181,7 @@ int Svc::recv_data(void) {
 		}
 	}
 
-	//LOG_DEBUG("recv %d data", buf->readable_bytes());
+	//LIB_LOG_DEBUG("recv %d data", buf->readable_bytes());
 
 	if (push_recv_block(buf) == 0) {
 		recv_handler(cid_);
@@ -209,19 +209,19 @@ int Svc::send_data(void) {
 		iov_buff.clear();
 
 		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
-			LOG_USER_TRACE("construct_iov return 0");
+			LIB_LOG_TRACE("construct_iov return 0");
 			return 0;
 		}
 
 		int ret = ::writev(this->get_fd(), &*iov_vec.begin(), iov_vec.size());
 		if (ret == -1) {
-			LOG_SYS("writev cid:%d ip = [%s], port = %d", cid_, peer_ip_.c_str(), peer_port_);
+			LIB_LOG_INFO("writev cid:%d ip = [%s], port = %d", cid_, peer_ip_.c_str(), peer_port_);
 			if (errno == EINTR) { /// 被打断, 重写
 				continue;
 			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
 				return ret;
 			} else { /// 其他错误，丢掉该客户端全部数据
-				LOG_SYS("role_id:%ld writev cid:%d ip = [%s], port = %d handle_colse", role_id_, cid_, peer_ip_.c_str(), peer_port_);
+				LIB_LOG_INFO("role_id:%ld writev cid:%d ip = [%s], port = %d handle_colse", role_id_, cid_, peer_ip_.c_str(), peer_port_);
 				handle_close();
 				return ret;
 			}
@@ -264,14 +264,14 @@ int Svc::pack_recv_data(Block_Vector &block_vec) {
 	while (! recv_block_list_.empty()) {
 		front_buf = recv_block_list_.front();
 		if (! front_buf) {
-			LOG_USER_TRACE("front_buf == 0");
+			LIB_LOG_TRACE("front_buf == 0");
 			continue;
 		}
 
 		rd_idx_orig = front_buf->get_read_idx();
 		cid = front_buf->read_int32();
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
-			LOG_USER_TRACE("role_id:%ld cid:%d data block error.", role_id_, cid);
+			LIB_LOG_TRACE("role_id:%ld cid:%d data block error.", role_id_, cid);
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			push_block(cid_, front_buf);
@@ -293,7 +293,7 @@ int Svc::pack_recv_data(Block_Vector &block_vec) {
 		size_t data_len = front_buf->readable_bytes() - sizeof(len);
 
 		if (len == 0 || len > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LOG_USER_TRACE("cid:%d role_id:%ld data block len = %u", cid_, role_id_, len);
+			LIB_LOG_TRACE("cid:%d role_id:%ld data block len = %u", cid_, role_id_, len);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();

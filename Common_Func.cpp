@@ -9,8 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sstream>
-//#include <openssl/md5.h>
-
+#include <openssl/md5.h>
 
 long elf_hash(const char *str, unsigned int len) {
 	long int hash = 0, x = 0;
@@ -40,20 +39,18 @@ void make_session(std::string& account, std::string& session){
 }
 
 int validate_md5(const char *key, const char *account, const char *time, const char *session) {
-    //static const char *key = "123!@#qwe";
+	char mine_src[256 + 1], mine_md5[256 + 1];
+	memset(mine_src, 0x00, 256 + 1);
+	memset(mine_md5, 0x00, 256 + 1);
 
-    char mine_src[256 + 1], mine_md5[256 + 1];
-    memset(mine_src, 0x00, 256 + 1);
-    memset(mine_md5, 0x00, 256 + 1);
+	snprintf(mine_src, sizeof(mine_src), "%s%s%s", account, time, key);
+	const unsigned char *tmp_md5 = MD5((const unsigned char *) mine_src, strlen(mine_src), 0);
 
-    snprintf(mine_src, sizeof(mine_src), "%s%s%s", account, time, key);
-    //const unsigned char *tmp_md5 = MD5((const unsigned char *) mine_src, strlen(mine_src), 0);
-
-    for (uint i = 0; i < 16; i++) {
-        //sprintf(&mine_md5[i * 2], "%.2x", tmp_md5[i]);
+	for (uint i = 0; i < 16; i++) {
+		sprintf(&mine_md5[i * 2], "%.2x", tmp_md5[i]);
     }
 
-    return strncmp(session, mine_md5, strlen(session));
+	return strncmp(session, mine_md5, strlen(session));
 }
 
 void set_date_to_day(Date_Time &date_time, int time) {
@@ -518,6 +515,6 @@ extern int get_next_tick_time(const Json::Value &week, const Json::Value &time, 
 
 void print_time_date(const Time_Value &time, const std::string &time_name) {
 	Date_Time timeout_date(time);
-	LOG_DEBUG("the %s date is : %d-%d-%d %d:%d:%d", time_name.c_str(), timeout_date.year(), timeout_date.month(), timeout_date.day(),
+	LIB_LOG_DEBUG("the %s date is : %d-%d-%d %d:%d:%d", time_name.c_str(), timeout_date.year(), timeout_date.month(), timeout_date.day(),
 		timeout_date.hour(), timeout_date.minute(), timeout_date.second());
 }

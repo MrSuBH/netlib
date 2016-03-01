@@ -11,17 +11,17 @@
 int Server_Accept::accept_svc(int connfd) {
 	Server_Svc *svc = server_->svc_pool().pop();
 	if (! svc) {
-		LOG_USER("svc == NULL");
+		LIB_LOG_INFO("svc == NULL");
 		return -1;
 	}
 
 	int cid = server_->svc_list().record_svc(svc);
 	if (cid == -1) {
-		LOG_USER("cid == -1");
+		LIB_LOG_INFO("cid == -1");
 		server_->svc_pool().push(svc);
 		return -1;
 	}
-	LOG_DEBUG("connfd=%d cid:%d", connfd, cid);
+	LIB_LOG_DEBUG("connfd=%d cid:%d", connfd, cid);
 
 
 	svc->reset();
@@ -88,7 +88,7 @@ int Server_Pack::packed_data_handler(Block_Vector &block_vec) {
 }
 
 int Server_Pack::drop_handler(int cid) {
-	LOG_DEBUG("drop_handler, cid = %d.", cid);
+	LIB_LOG_DEBUG("drop_handler, cid = %d.", cid);
 	server_->drop_cid_list().push_back(cid);
 	server_->recycle_svc(cid);
 	return 0;
@@ -157,7 +157,7 @@ void Server::run_handler(void) {
 }
 
 void Server::process_list(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 }
 
 void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval) {

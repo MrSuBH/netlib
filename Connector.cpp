@@ -9,17 +9,17 @@
 #include "Misc.h"
 
 int Connector_Connect::connect_svc(int connfd) {
-	LOG_DEBUG("connfd=%d", connfd);
+	LIB_LOG_DEBUG("connfd=%d", connfd);
 
 	Connector_Svc *svc = connector_->svc_pool().pop();
 	if (! svc) {
-		LOG_USER("svc == NULL");
+		LIB_LOG_INFO("svc == NULL");
 		return -1;
 	}
 
 	int cid = connector_->svc_list().record_svc(svc);
 	if (cid == -1) {
-		LOG_USER("cid == -1");
+		LIB_LOG_INFO("cid == -1");
 		connector_->svc_pool().push(svc);
 		return -1;
 	}
@@ -89,7 +89,7 @@ int Connector_Pack::packed_data_handler(Block_Vector &block_vec) {
 }
 
 int Connector_Pack::drop_handler(int cid) {
-	LOG_DEBUG("drop_handler, cid = %d.", cid);
+	LIB_LOG_DEBUG("drop_handler, cid = %d.", cid);
 	connector_->recycle_svc(cid);
 	return 0;
 }
@@ -157,7 +157,7 @@ void Connector::run_handler(void) {
 }
 
 void Connector::process_list(void) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 }
 
 void Connector::set(std::string ip, int port, Time_Value &send_interval) {
@@ -184,7 +184,7 @@ int Connector::start(void) {
 
 int Connector::connect_server(void) {
 	cid_ = connect_.connect(ip_.c_str(), port_);
-	LOG_DEBUG("cid_ = %d", cid_);
+	LIB_LOG_DEBUG("cid_ = %d", cid_);
 	return cid_;
 }
 

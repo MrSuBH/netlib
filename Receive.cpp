@@ -43,11 +43,11 @@ int Receive::set(Server *server, Connector *connector, Time_Value *timeout) {
 int Receive::init(void) {
 	if (heartbeat_timeout_ == Time_Value::zero) {
 		if ((reactor_ = new Receive_Watcher(this)) == 0) {
-			LOG_SYS_ABORT("new Receiver_Watcher");
+			LIB_LOG_FATAL("new Receiver_Watcher");
 		}
 	} else {
 		if ((reactor_ = new Receive_Watcher(this, Epoll_Watcher::WITH_IO_HEARTBEAT, heartbeat_timeout_.sec())) == 0) {
-			LOG_SYS_ABORT("Receiver new Reactor");
+			LIB_LOG_FATAL("Receiver new Reactor");
 		}
 	}
 	return 0;
@@ -62,7 +62,7 @@ int Receive::fini(void) {
 }
 
 void Receive::run_handler(void) {
-	LOG_DEBUG("start receiver");
+	LIB_LOG_DEBUG("start receiver");
 	reactor_->loop();
 }
 
@@ -104,11 +104,11 @@ int Receive::unregister_svc(Svc *svc) {
 }
 
 int Receive::drop_handler(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 Svc *Receive::find_svc(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }

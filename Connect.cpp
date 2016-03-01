@@ -28,8 +28,7 @@ int Connect::connect(const char *ip, int port) {
 	struct sockaddr_in serveraddr;
 
 	if ((connfd = ::socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		LOG_SYS("socket");
-		return -1;
+		LIB_LOG_FATAL("connect socket fail, connfd = %d", connfd);
 	}
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
@@ -37,13 +36,13 @@ int Connect::connect(const char *ip, int port) {
 	serveraddr.sin_port = htons(port);
 
 	if (::inet_pton(AF_INET, ip, &serveraddr.sin_addr) <= 0) {
-		LOG_SYS("inet_pton");
+		LIB_LOG_ERROR("connect inet_pton fail, ip = %s, port = %d", ip, port);
 		::close(connfd);
 		return -1;
 	}
 
 	if (::connect(connfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0) {
-		LOG_SYS("connect ip:%s port:%d", ip, port);
+		LIB_LOG_ERROR("connect fail, ip = %s, port = %d", ip, port);
 		::close(connfd);
 		return -1;
 	}

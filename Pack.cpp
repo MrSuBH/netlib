@@ -26,27 +26,27 @@ int Pack::push_packing_cid(int cid) {
 }
 
 Svc *Pack::find_svc(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 Block_Buffer *Pack::pop_block(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Pack::push_block(int cid, Block_Buffer *block) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Pack::packed_data_handler(Block_Vector &block_vec) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
 int Pack::drop_handler(int cid) {
-	LOG_USER_TRACE("SHOULD NOT HERE");
+	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
@@ -65,7 +65,7 @@ int Pack::process_drop(void) {
 }
 
 void Pack::run_handler(void) {
-	LOG_DEBUG("start packer");
+	LIB_LOG_DEBUG("start packer");
 	process();
 }
 
@@ -86,7 +86,7 @@ int Pack::process_packing_list(void) {
 	while (! packing_list_.empty()) {
 		cid = packing_list_.pop_front();
 		if ((svc = find_svc(cid)) == 0) {
-			LOG_USER_TRACE("cannot find svc cid = %d.", cid);
+			LIB_LOG_TRACE("cannot find svc cid = %d.", cid);
 			continue;
 		}
 		block_vec.clear();
