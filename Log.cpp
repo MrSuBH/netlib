@@ -19,6 +19,7 @@
 Log::Log(void):
   log_type_(LOG_MISC),
   log_sub_type_(0),
+  file_switcher_(false),
   msg_time_(2000)
 {
 	Time_Value now = Time_Value::gettimeofday();
@@ -121,14 +122,12 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 			msg_stream << (strings[i]) << std::endl;
 		}
 		free(strings);
-		logging_file(msg_stream);
 		break;
 	}
 	case LOG_DEBUG:
 	case LOG_INFO:
 	case LOG_WARN: {
 		msg_stream << std::endl;
-		logging_file(msg_stream);
 		break;
 	}
 	case LOG_ERROR: {
@@ -136,8 +135,6 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
 		msg_stream << ", errstr=[" << line_buf << "]" << std::endl;
-
-		logging_file(msg_stream);
 		break;
 	}
 	case LOG_FATAL: {
@@ -145,7 +142,12 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
 		msg_stream << ", errstr=[" << line_buf << "]" << std::endl;
-		logging_file(msg_stream);
+
+		if (file_switcher_) {
+			logging_file(msg_stream);
+		} else {
+			std::cerr << msg_stream.str();
+		}
 		abort();
 		break;
 	}
@@ -154,18 +156,21 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 	}
 	}
 
+	if (file_switcher_) {
+		logging_file(msg_stream);
+	} else {
+		std::cerr << msg_stream.str();
+	}
 	return ;
 }
 
 void Log::logging_file(std::ostringstream &msg_stream) {
-	std::cerr << msg_stream.str();
 	Block_Buffer buf;
 	buf.make_inner_message(999999);
 	buf.write_int32(log_type_);
 	buf.write_int32(log_sub_type_);
 	buf.write_string(msg_stream.str());
 	buf.finish_message();
-
 	LOG_CONNECTOR->push_data_block(buf);
 }
 

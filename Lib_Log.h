@@ -51,6 +51,8 @@ public:
 	void log_error(const char *fmt, ...);
 	void log_fatal(const char *fmt, ...);
 
+	void set_file_switcher(bool file_switcher);
+
 private:
 	Lib_Log(void);
 	virtual ~Lib_Log(void);
@@ -63,12 +65,16 @@ private:
 
 private:
 	static Lib_Log *instance_;
-
+	bool file_switcher_;			//是否写入文件
 	Lib_Log_File_Lock log_lock_;
 	Lib_Log_File log_file_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+inline void Lib_Log::set_file_switcher(bool file_switcher) {
+	file_switcher_ = file_switcher;
+}
 
 //打印程序运行堆栈,跟踪记录数据信息
 #define LIB_LOG_TRACE(FMT, ...) do {						\

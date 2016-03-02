@@ -88,7 +88,6 @@ int Epoll_Watcher::next_heart_idx(void) {
 }
 
 int Epoll_Watcher::inner_cmd(void) {
-	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 

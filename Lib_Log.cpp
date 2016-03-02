@@ -20,7 +20,7 @@
 #include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
 
-Lib_Log::Lib_Log(void) { }
+Lib_Log::Lib_Log(void) : file_switcher_(false) { }
 
 Lib_Log::~Lib_Log(void) { }
 
@@ -126,15 +126,12 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 			msg_stream << (strings[i]) << std::endl;
 		}
 		free(strings);
-		logging_file(msg_stream);
-
 		break;
 	}
 	case LIB_LOG_DEBUG:
 	case LOG_INFO:
 	case LOG_WARN: {
 		msg_stream << std::endl;
-		logging_file(msg_stream);
 		break;
 	}
 	case LOG_ERROR: {
@@ -142,8 +139,6 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
 		msg_stream << ", errstr=[" << line_buf << "]" << std::endl;
-
-		logging_file(msg_stream);
 		break;
 	}
 	case LOG_FATAL: {
@@ -151,7 +146,13 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
 		msg_stream << ", errstr=[" << line_buf << "]" << std::endl;
-		logging_file(msg_stream);
+
+		if (file_switcher_) {
+			logging_file(msg_stream);
+		}
+		else {
+			std::cerr << msg_stream.str();
+		}
 		abort();
 		break;
 	}
@@ -160,6 +161,12 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 	}
 	}
 
+	if (file_switcher_) {
+		logging_file(msg_stream);
+	}
+	else {
+		std::cerr << msg_stream.str();
+	}
 	return ;
 }
 

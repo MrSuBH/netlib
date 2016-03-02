@@ -63,7 +63,7 @@ public:
 	void log_fatal(const char *fmt, ...);
 
 	void set_log_type(int type, int sub_type = 0);
-	int get_log_type(void);
+	void set_file_switcher(bool file_switcher);
 
 	void assembly_msg(int log_flag, const char *fmt, va_list ap);
 	void logging_file(std::ostringstream &msg_stream);
@@ -81,13 +81,12 @@ private:
 
 private:
 	static Log *instance_;
-	int log_type_;
-	int log_sub_type_;
+	int log_type_;						//日志类型
+	int log_sub_type_;				//日志子类型
+	bool file_switcher_;			//是否写入文件
 	Time_Value show_time_;
 	Msg_Process_Time_Map msg_time_;
 };
-
-#define LOG Log::instance()
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -96,8 +95,8 @@ inline void Log::set_log_type(int type, int sub_type) {
 	log_sub_type_ = sub_type;
 }
 
-inline int Log::get_log_type(void) {
-	return log_type_;
+inline void Log::set_file_switcher(bool file_switcher) {
+	file_switcher_ = file_switcher;
 }
 
 //打印程序运行堆栈,跟踪记录数据信息
@@ -138,7 +137,7 @@ public:
 
 	~Perf_Mon(void) {
 		Time_Value res_tv = Time_Value::gettimeofday() - tv_;
-		LOG->msg_time(msg_id_, res_tv);
+		Log::instance()->msg_time(msg_id_, res_tv);
 	}
 
 private:
