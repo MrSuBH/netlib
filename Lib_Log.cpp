@@ -34,8 +34,7 @@ std::string Lib_Log::msg_head[] = {
 		"[LOG_INFO] ",
 		"[LOG_WARN] ",
 		"[LOG_ERROR] ",
-		"[LOG_FATAL] ",
-		"[NULL_STUB]"
+		"[LOG_FATAL] "
 };
 
 Lib_Log *Lib_Log::instance_ = 0;
