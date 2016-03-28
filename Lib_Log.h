@@ -91,7 +91,7 @@ inline void Lib_Log::set_file_switcher(bool file_switcher) {
 	} while (0)
 
 //出现潜在错误的情形
-#define LIB_LOG_WRAN(FMT, ...) do {						\
+#define LIB_LOG_WARN(FMT, ...) do {						\
 		Lib_Log::instance()->log_warn("in %s:%d function %s: "#FMT, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 	} while (0)
 

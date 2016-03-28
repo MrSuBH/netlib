@@ -41,12 +41,13 @@ public:
 	};
 
 	enum {
-		LOG_LOGIN	= 1,
-		LOG_GATE		= 2,
-		LOG_GAME		= 3,
-		LOG_MASTER	= 4,
-		LOG_DB 		= 5,
-		LOG_MISC 	= 6,
+		LOG_MISC 				= 0,
+		LOG_LOG_SERVER 		= 1,
+		LOG_DB_SERVER			=	2,
+		LOG_LOGIN_SERVER	=	3,
+		LOG_MASTER_SERVER	=	4,
+		LOG_GAME_SERVER		=	5,
+		LOG_GATE_SERVER		=	6,
 	};
 
 	static int msg_buf_size;
@@ -115,7 +116,7 @@ inline void Log::set_file_switcher(bool file_switcher) {
 	} while (0)
 
 //出现潜在错误的情形
-#define LOG_WRAN(FMT, ...) do {						\
+#define LOG_WARN(FMT, ...) do {						\
 		Log::instance()->log_warn("in %s:%d function %s: "#FMT, __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 	} while (0)
 
