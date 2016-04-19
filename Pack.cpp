@@ -90,7 +90,7 @@ int Pack::process_packing_list(void) {
 			continue;
 		}
 		block_vec.clear();
-		svc->pack_recv_data(block_vec);
+		svc->pack_data(block_vec);
 
 		if (block_vec.size())
 			packed_data_handler(block_vec);

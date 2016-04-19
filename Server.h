@@ -100,7 +100,7 @@ public:
 	void run_handler(void);
 	virtual void process_list(void);
 
-	void set(int port, Time_Value &recv_timeout, Time_Value &send_interval);
+	void set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int network_protocol_type = 0);
 	int init(void);
 	int start(void);
 
@@ -112,6 +112,7 @@ public:
 	inline Server_Receive &receive(void) { return receive_; }
 	inline Server_Send &send(void) { return send_; }
 	inline Server_Pack &pack(void) { return pack_; }
+	inline NetWork_Protocol network_protocol_type(void) { return network_protocol_type_; }
 
 	Block_Buffer *pop_block(int cid);
 	int push_block(int cid, Block_Buffer *buf);
@@ -136,6 +137,7 @@ private:
 	Server_Receive receive_;
 	Server_Send send_;
 	Server_Pack pack_;
+	NetWork_Protocol network_protocol_type_;
 };
 
 #endif /* LIB_SERVER_H_ */

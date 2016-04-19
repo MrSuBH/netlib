@@ -25,6 +25,7 @@ int Server_Accept::accept_svc(int connfd) {
 
 
 	svc->reset();
+	svc->create_handler(server_->network_protocol_type());
 	svc->set_max_list_size(Server::svc_max_list_size);
 	svc->set_max_pack_size(Server::svc_max_pack_size);
 	svc->set_cid(cid);
@@ -148,7 +149,7 @@ int Server_Svc::close_handler(int cid) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Server::Server(void) { }
+Server::Server(void): network_protocol_type_(NETWORK_PROTOCOL_TCP) { }
 
 Server::~Server(void) { }
 
@@ -160,11 +161,12 @@ void Server::process_list(void) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 }
 
-void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval) {
+void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int network_protocol_type) {
 	accept_.set(this, port);
 	receive_.set(this, 0, &recv_timeout);
 	send_.set(this, 0, send_interval);
 	pack_.set(this, 0);
+	network_protocol_type_ = (NetWork_Protocol)network_protocol_type;
 }
 
 int Server::init(void) {
