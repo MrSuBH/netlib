@@ -70,7 +70,7 @@ void Svc_Handler::set_parent(Svc *parent){
 
 int Svc_Handler::push_recv_block(Block_Buffer *buf){
 	if (recv_block_list_.size() >= max_list_size_) {
-		LIB_LOG_INFO("recv_block_list_ has full.");
+		LIB_LOG_ERROR("recv_block_list_ has full.");
 		return -1;
 	}
 	recv_block_list_.push_back(buf);
@@ -80,7 +80,7 @@ int Svc_Handler::push_recv_block(Block_Buffer *buf){
 
 int Svc_Handler::push_send_block(Block_Buffer *buf){
 	if (send_block_list_.size() >= max_list_size_) {
-		LIB_LOG_INFO("role_id:%ld send_block_list_ has full send_block_list_.size() = %d, max_list_size_ = %d", parent_->get_role_id(), send_block_list_.size(), max_list_size_);
+		LIB_LOG_ERROR("send_block_list_ full cid = %d, send_block_list_.size() = %d, max_list_size_ = %d", parent_->get_cid(), send_block_list_.size(), max_list_size_);
 		parent_->handle_close();
 		return -1;
 	}
@@ -96,7 +96,6 @@ Svc::Svc(void):
 	is_reg_recv_(false),
 	is_reg_send_(false),
 	peer_port_(0),
-	role_id_(0),
 	network_procotol_type_(NETWORK_PROTOCOL_TCP),
 	handler_(0)
 { }
@@ -105,10 +104,6 @@ Svc::~Svc(void) { }
 
 void Svc::set_server(Server *server) {
 	server_ = server;
-}
-
-void Svc::set_svc_handler(Svc_Handler *svc_handler){
-	handler_ = svc_handler;
 }
 
 void Svc::set_connector(Connector *connector) {
@@ -170,7 +165,7 @@ int Svc::handle_close(void) {
 
 int Svc::close_fd(void) {
 	if (is_closed_) {
-		LIB_LOG_DEBUG("close fd = %d", this->get_fd());
+		LIB_LOG_INFO("close fd = %d, cid = %d", this->get_fd(), cid_);
 		::close(this->get_fd());
 	}
 	return 0;
@@ -228,33 +223,15 @@ void Svc::create_handler(NetWork_Protocol network_protocol_type) {
 	network_procotol_type_ = network_protocol_type;
 	switch(network_protocol_type){
 		case NETWORK_PROTOCOL_TCP:
-			handler_ = Svc_Tcp::create_object();
+			handler_ = new Svc_Tcp;
 			break;
 		case NETWORK_PROTOCOL_UDP:
 			break;
 		case NETWORK_PROTOCOL_WEBSOCKET:
-			handler_ = Svc_Websocket::create_object();
+			handler_ = new Svc_Websocket;
 			break;
 		default:
 			break;
 	}
 	handler_->set_parent(this);
 }
-
-void Svc::reclaim_handler() {
-	switch(network_procotol_type_){
-		case NETWORK_PROTOCOL_TCP:
-			Svc_Tcp::reclaim_object(static_cast<Svc_Tcp *>(handler_));
-			break;
-		case NETWORK_PROTOCOL_UDP:
-			break;
-		case NETWORK_PROTOCOL_WEBSOCKET:
-			Svc_Websocket::reclaim_object(static_cast<Svc_Websocket *>(handler_));
-			break;
-		default:
-			break;
-	}
-	handler_ = 0;
-	network_procotol_type_ = NETWORK_PROTOCOL_TCP;
-}
-

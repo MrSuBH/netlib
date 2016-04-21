@@ -21,8 +21,6 @@
 #include "Svc_WebSocket.h"
 #include "Sha1.h"
 
-static Object_Pool<Svc_Websocket> _g_object;
-
 Svc_Websocket::Svc_Websocket():
 	Svc_Handler(),
 	websocket_connected_(false)
@@ -30,15 +28,6 @@ Svc_Websocket::Svc_Websocket():
 }
 
 Svc_Websocket::~Svc_Websocket(){
-}
-
-Svc_Websocket *Svc_Websocket::create_object(){
-	return _g_object.pop();
-}
-
-void Svc_Websocket::reclaim_object(Svc_Websocket *svc_websocket){
-	svc_websocket->reset();
-	_g_object.push(svc_websocket);
 }
 
 void Svc_Websocket::reset(void){
@@ -53,7 +42,7 @@ int Svc_Websocket::handle_recv(void){
 	int cid = parent_->get_cid();
 	Block_Buffer *buf = parent_->pop_block(cid);
 	if (! buf) {
-		LIB_LOG_TRACE("pop_block return 0");
+		LIB_LOG_TRACE("websocket pop_block fail, cid:%d", cid);
 		return -1;
 	}
 	buf->reset();
@@ -69,25 +58,19 @@ int Svc_Websocket::handle_recv(void){
 			if (errno == EWOULDBLOCK)
 				break;
 
-			LIB_LOG_INFO("role_id:%ld read", parent_->get_role_id());
-
+			LIB_LOG_TRACE("websocket read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
-
 			return 0;
 		} else if (n == 0) { /// EOF
-			LIB_LOG_DEBUG("role_id:%ld fd=%d, read return 0, EOF close", parent_->get_role_id(), parent_->get_fd());
-
+			LIB_LOG_TRACE("websocket read eof close cid:%d fd=%d", cid, parent_->get_fd());
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
-
 			return 0;
 		} else {
 			buf->set_write_idx(buf->get_write_idx() + n);
 		}
 	}
-
-	//LIB_LOG_DEBUG("recv %d data", buf->readable_bytes());
 
 	if (push_recv_block(buf) == 0) {
 		parent_->recv_handler(cid);
@@ -103,25 +86,22 @@ int Svc_Websocket::handle_send(void){
 		return 0;
 	Block_Buffer *front_buf = 0;
 
-	while (! send_block_list_.empty()) {
+	while (!send_block_list_.empty()) {
 		front_buf = send_block_list_.front();
 		
 		Block_Buffer *data_buf = make_websocket_frame(front_buf);
 		size_t sum_bytes = data_buf->readable_bytes();
 		
 		int cid = parent_->get_cid();
-		int64_t role_id = parent_->get_role_id();
-
 		int ret = ::write(parent_->get_fd(), data_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
-			LIB_LOG_INFO("write cid:%d ip = [%s], port = %d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port());
+			LIB_LOG_TRACE("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			if (errno == EINTR) { /// 被打断, 重写
 				parent_->push_block(cid, data_buf);
 				continue;
 			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
 				return ret;
 			} else { /// 其他错误，丢掉该客户端全部数据
-				LIB_LOG_INFO("role_id:%ld writev cid:%d ip = [%s], port = %d handle_colse", role_id, cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port());
 				parent_->handle_close();
 				return ret;
 			}
@@ -167,7 +147,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 		}
 
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
-			LIB_LOG_TRACE("role_id:%ld cid:%d data block error.", parent_->get_role_id(), cid);
+			LIB_LOG_TRACE("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			parent_->push_block(parent_->get_cid(), front_buf);
@@ -189,7 +169,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 		fin = tmp >> 7;
 		opcode = tmp & 0x0f;
 		if(opcode == OPCODE_CLOSE) { // websocket被客户端关闭
-			LIB_LOG_TRACE("role_id:%ld cid:%d fin:%d websocket on close.", parent_->get_role_id(), cid, fin);
+			LIB_LOG_TRACE("cid:%d fin:%d websocket on close.", cid, fin);
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			parent_->push_block(parent_->get_cid(), front_buf);
@@ -232,7 +212,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 
 		size_t data_len = front_buf->readable_bytes();
 		if (payload_length == 0 || payload_length > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LIB_LOG_TRACE("cid:%d role_id:%ld data block len = %u", parent_->get_cid(), parent_->get_role_id(), payload_length);
+			LIB_LOG_TRACE("cid:%d data block len = %u", parent_->get_cid(), payload_length);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();
@@ -289,7 +269,7 @@ Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8
 	for(int i = 0; i < payload_length; i++){
 		int j = i % 4;
 		uint8_t c = buf->read_uint8() ^ masking_key[j];
-		//LIB_LOG_INFO("char is %c", c);
+		//LIB_LOG_ERROR("char is %c", c);
 		data_buf->write_uint8(c);
 	}
 	return data_buf;
@@ -397,7 +377,7 @@ Block_Buffer *Svc_Websocket::make_websocket_frame(Block_Buffer *buf, uint8_t *op
 	else{
 		//单个包大小有限制
 	}
-	//LIB_LOG_INFO("PAYLOADLENGTH:%d", msg_len);
+	//LIB_LOG_ERROR("PAYLOADLENGTH:%d", msg_len);
 	data_buf->copy(buf->get_read_ptr(), msg_len);
 	return data_buf;
 }

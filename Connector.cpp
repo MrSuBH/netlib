@@ -13,13 +13,13 @@ int Connector_Connect::connect_svc(int connfd) {
 
 	Connector_Svc *svc = connector_->svc_pool().pop();
 	if (! svc) {
-		LIB_LOG_INFO("svc == NULL");
+		LIB_LOG_ERROR("svc == NULL");
 		return -1;
 	}
 
 	int cid = connector_->svc_list().record_svc(svc);
 	if (cid == -1) {
-		LIB_LOG_INFO("cid == -1");
+		LIB_LOG_ERROR("cid == -1");
 		connector_->svc_pool().push(svc);
 		return -1;
 	}

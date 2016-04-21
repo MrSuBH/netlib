@@ -11,18 +11,17 @@
 int Server_Accept::accept_svc(int connfd) {
 	Server_Svc *svc = server_->svc_pool().pop();
 	if (! svc) {
-		LIB_LOG_INFO("svc == NULL");
+		LIB_LOG_ERROR("svc == NULL");
 		return -1;
 	}
 
 	int cid = server_->svc_list().record_svc(svc);
 	if (cid == -1) {
-		LIB_LOG_INFO("cid == -1");
+		LIB_LOG_ERROR("cid == -1");
 		server_->svc_pool().push(svc);
 		return -1;
 	}
 	LIB_LOG_DEBUG("connfd=%d cid:%d", connfd, cid);
-
 
 	svc->reset();
 	svc->create_handler(server_->network_protocol_type());

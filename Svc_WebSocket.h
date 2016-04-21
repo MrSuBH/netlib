@@ -33,8 +33,6 @@ public:
 	Svc_Websocket(void);
 	virtual ~Svc_Websocket(void);
 
-	static Svc_Websocket *create_object();
-	static void reclaim_object(Svc_Websocket *svc_websocket);
 	void reset(void);
 	virtual int handle_recv(void);
 	virtual int handle_send(void);

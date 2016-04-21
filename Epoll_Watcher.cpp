@@ -58,7 +58,7 @@ int Epoll_Watcher::open(void) {
 
 int Epoll_Watcher::io_open(void) {
 	if ((events_ = (struct epoll_event *)calloc(max_events_, sizeof(struct epoll_event))) == 0) {
-		LIB_LOG_INFO("realloc");
+		LIB_LOG_ERROR("realloc");
 		return -1;
 	}
 
@@ -72,7 +72,7 @@ int Epoll_Watcher::io_open(void) {
 
 int Epoll_Watcher::timer_open(void) {
 	if (pipe(pipe_fd_) < 0) {
-		LIB_LOG_INFO("pipe");
+		LIB_LOG_ERROR("pipe");
 		return -1;
 	}
 	set_nonblock(pipe_fd_[0]);
@@ -94,7 +94,7 @@ int Epoll_Watcher::inner_cmd(void) {
 int Epoll_Watcher::notify(void) {
 	int ret = 0;
 	if ((ret = ::write(pipe_fd_[1], "a", 1)) < 0) {
-		LIB_LOG_INFO("write");
+		LIB_LOG_ERROR("write");
 	}
 	return ret;
 }
@@ -157,7 +157,7 @@ int Epoll_Watcher::add_io(Event_Handler *evh, int op) {
 	}
 
 	if (::epoll_ctl(this->epfd_, EPOLL_CTL_ADD, evh->get_fd(), &ev) == -1) {
-		LIB_LOG_INFO("epoll_ctl");
+		LIB_LOG_ERROR("epoll_ctl");
 
 		pending_io_map_[evh->get_fd()] = 0;
 		io_heart_map_[evh->get_heart_idx()].erase(evh->get_fd());
@@ -213,7 +213,7 @@ int Epoll_Watcher::remove_io(Event_Handler *evh) {
 	int ret = 0;
 	if ((ret = ::epoll_ctl(epfd_, EPOLL_CTL_DEL, evh->get_fd(), NULL)) == -1) {
 		if (errno != EINTR)
-			LIB_LOG_INFO("epoll_ctl");
+			LIB_LOG_ERROR("epoll_ctl");
 	}
 	pending_io_map_[evh->get_fd()] = 0;
 
@@ -279,7 +279,7 @@ void Epoll_Watcher::watcher_loop(void) {
 	int nfds = ::epoll_wait(this->epfd_, this->events_, this->max_events_, this->calculate_timeout());
 	if (nfds == -1) {
 		if (errno != EINTR)
-			LIB_LOG_INFO("epoll_wait");
+			LIB_LOG_ERROR("epoll_wait");
 		return ;
 	}
 
@@ -324,7 +324,7 @@ void Epoll_Watcher::process_timer_event(void) {
 			break;
 
 		if ((evh = this->tq_.top()) == 0) {
-			LIB_LOG_INFO("evh == 0");
+			LIB_LOG_ERROR("evh == 0");
 			continue;
 		}
 
@@ -383,7 +383,7 @@ int Epoll_Watcher::handle_timeout(const Time_Value &tv) {
 	}
 
 	for (std::vector<Event_Handler *>::iterator it = remove_vec.begin(); it != remove_vec.end(); ++it) {
-		LIB_LOG_INFO("handle_close timeout");
+		LIB_LOG_ERROR("handle_close timeout");
 		(*it)->handle_close();
 	}
 
@@ -400,7 +400,7 @@ int Epoll_Watcher::handle_input(void) {
 	while (1) {
 		ret = ::read(pipe_fd_[0], tbuf, sizeof(tbuf));
 		if (ret == 0) {
-			LIB_LOG_INFO("read EOF");
+			LIB_LOG_ERROR("read EOF");
 			break;
 		}
 		if (ret < 0) {

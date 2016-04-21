@@ -106,18 +106,13 @@ public:
 	void set_max_list_size(size_t max_size);
 	void set_max_pack_size(size_t max_size);
 
-	void set_role_id(int64_t role_id);
-	int64_t get_role_id(void);
-
 	void set_server(Server *server);
 	void set_connector(Connector *connector);
-	void set_svc_handler(Svc_Handler *svc_handler);
 	
 	std::string get_peer_ip();
 	int get_peer_port();
 
 	void create_handler(NetWork_Protocol type);
-	void reclaim_handler(void);
 
 protected:
 	Server *server_;
@@ -131,15 +126,14 @@ private:
 	std::string peer_ip_;
 	int peer_port_;
 
-	int64_t role_id_;
-
 	NetWork_Protocol network_procotol_type_;
 	Svc_Handler *handler_;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
 inline void Svc::reset(void) {
+	server_ = 0;
+	connector_ = 0;
+
 	cid_ = 0;
 	is_closed_ = false;
 	is_reg_recv_ = false;
@@ -148,10 +142,11 @@ inline void Svc::reset(void) {
 	peer_ip_.clear();
 	peer_port_ = 0;
 
-	role_id_ = 0;
-	server_ = 0;
-	if(handler_){
-		reclaim_handler();
+	network_procotol_type_ = NETWORK_PROTOCOL_TCP;
+	if (handler_) {
+		handler_->reset();
+		delete handler_;
+		handler_ = 0;
 	}
 	Event_Handler::reset();
 }
@@ -210,14 +205,6 @@ inline void Svc::set_max_pack_size(size_t max_size) {
 
 inline void Svc::set_peer_addr(void) {
 	get_peer_addr(peer_ip_, peer_port_);
-}
-
-inline void Svc::set_role_id(int64_t role_id) {
-	role_id_ = role_id;
-}
-
-inline int64_t Svc::get_role_id(void) {
-	return role_id_;
 }
 
 inline std::string Svc::get_peer_ip(void) {

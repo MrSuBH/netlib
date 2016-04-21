@@ -94,27 +94,27 @@ void Accept::server_accept(void) {
 		memset(&client_addr, 0, sizeof(client_addr));
 		addr_len = sizeof(client_addr);
 		if ((connfd = ::accept4(listenfd_, (struct sockaddr *) &client_addr, &addr_len, SOCK_NONBLOCK | SOCK_CLOEXEC)) == -1) {
-			LIB_LOG_INFO("server_accept, accpet fail, listenfd = %d", listenfd_);
+			LIB_LOG_ERROR("server_accept, accpet fail, listenfd = %d", listenfd_);
 			continue;
 		}
 		struct linger so_linger;
 		so_linger.l_onoff = 1;
 		so_linger.l_linger = 0;
 		if (::setsockopt(connfd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) < 0) {
-			LIB_LOG_INFO("server_accept setsockopt SO_LINGER fail, connfd = %d", connfd);
+			LIB_LOG_ERROR("server_accept setsockopt SO_LINGER fail, connfd = %d", connfd);
 			continue;
 		}
 
 /** turn on/off TCP Nagel algorithm
 		int nodelay_on=1;
 		if (::setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, &nodelay_on, sizeof(nodelay_on)) < 0) {
-			LIB_LOG_INFO("setsockopt nodelay");
+			LIB_LOG_ERROR("setsockopt nodelay");
 		}
 */
 
 		memset(client_ip, 0, sizeof(client_ip));
 		if (::inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip)) == NULL) {
-			LIB_LOG_INFO("server_accept inet_ntop fail, client_ip:%s", client_ip);
+			LIB_LOG_ERROR("server_accept inet_ntop fail, client_ip:%s", client_ip);
 			continue;
 		}
 

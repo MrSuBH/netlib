@@ -24,7 +24,7 @@
 inline void set_nonblock(int fd) {
 	int flags = ::fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
-		LIB_LOG_INFO("fcntl erro, fd = %d", fd);
+		LIB_LOG_ERROR("fcntl erro, fd = %d", fd);
 		return;
 	}
 	::fcntl(fd, F_SETFL, flags | O_NONBLOCK);

@@ -118,7 +118,7 @@ void Hot_Update::init_all_module(void) {
 	std::string module_path = "config/";
 	pDir = opendir(module_path.c_str());
 	if (pDir == NULL) {
-		LIB_LOG_INFO("hot update open file error:%s", module_path.c_str());
+		LIB_LOG_ERROR("hot update open file error:%s", module_path.c_str());
 		//被当作目录，但是执行opendir后发现又不是目录，比如软链接就会发生这样的情况。
 		return;
 	}

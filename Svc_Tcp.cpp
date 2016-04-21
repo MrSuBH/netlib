@@ -18,23 +18,12 @@
 #include <string.h>
 #include "Svc_Tcp.h"
 
-static Object_Pool<Svc_Tcp> _g_object;
-
 Svc_Tcp::Svc_Tcp():
 	Svc_Handler()
 {
 }
 
 Svc_Tcp::~Svc_Tcp(){
-}
-
-Svc_Tcp *Svc_Tcp::create_object(){
-	return _g_object.pop();
-}
-
-void Svc_Tcp::reclaim_object(Svc_Tcp *svc_tcp){
-	svc_tcp->reset();
-	_g_object.push(svc_tcp);
 }
 
 int Svc_Tcp::handle_recv(void){
@@ -44,7 +33,7 @@ int Svc_Tcp::handle_recv(void){
 	int cid = parent_->get_cid();
 	Block_Buffer *buf = parent_->pop_block(cid);
 	if (! buf) {
-		LIB_LOG_TRACE("pop_block return 0");
+		LIB_LOG_TRACE("tcp pop_block fail, cid:%d", cid);
 		return -1;
 	}
 	buf->reset();
@@ -60,25 +49,19 @@ int Svc_Tcp::handle_recv(void){
 			if (errno == EWOULDBLOCK)
 				break;
 
-			LIB_LOG_INFO("role_id:%ld read", parent_->get_role_id());
-
+			LIB_LOG_TRACE("tcp read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
-
 			return 0;
 		} else if (n == 0) { /// EOF
-			LIB_LOG_DEBUG("role_id:%ld fd=%d, read return 0, EOF close", parent_->get_role_id(), parent_->get_fd());
-
+			LIB_LOG_TRACE("tcp read eof close cid:%d fd=%d", cid, parent_->get_fd());
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
-
 			return 0;
 		} else {
 			buf->set_write_idx(buf->get_write_idx() + n);
 		}
 	}
-
-	//LIB_LOG_DEBUG("recv %d data", buf->readable_bytes());
 
 	if (push_recv_block(buf) == 0) {
 		parent_->recv_handler(cid);
@@ -93,20 +76,14 @@ int Svc_Tcp::handle_send(void){
 	if (parent_->is_closed())
 		return 0;
 
-	while (1) {
-		size_t buf_size = send_block_list_.size();
-		if (! buf_size)
-			return 0;
-
+	while (!send_block_list_.empty()) {
 		size_t sum_bytes = 0;
 		std::vector<iovec> iov_vec;
 		std::vector<Block_Buffer *> iov_buff;
-
 		iov_vec.clear();
 		iov_buff.clear();
 		
 		int cid = parent_->get_cid();
-		int64_t role_id = parent_->get_role_id();
 		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
 			LIB_LOG_TRACE("construct_iov return 0");
 			return 0;
@@ -114,13 +91,12 @@ int Svc_Tcp::handle_send(void){
 
 		int ret = ::writev(parent_->get_fd(), &*iov_vec.begin(), iov_vec.size());
 		if (ret == -1) {
-			LIB_LOG_INFO("writev cid:%d ip = [%s], port = %d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port());
+			LIB_LOG_TRACE("writev cid:%d fd:%d ip:%s port:%d errno:%d", cid, parent_->get_fd(), parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			if (errno == EINTR) { /// 被打断, 重写
 				continue;
 			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
 				return ret;
 			} else { /// 其他错误，丢掉该客户端全部数据
-				LIB_LOG_INFO("role_id:%ld writev cid:%d ip = [%s], port = %d handle_colse", role_id, cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port());
 				parent_->handle_close();
 				return ret;
 			}
@@ -170,7 +146,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 		rd_idx_orig = front_buf->get_read_idx();
 		cid = front_buf->read_int32();
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
-			LIB_LOG_TRACE("role_id:%ld cid:%d data block error.", parent_->get_role_id(), cid);
+			LIB_LOG_TRACE("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			parent_->push_block(parent_->get_cid(), front_buf);
@@ -190,9 +166,8 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 
 		len = front_buf->peek_uint16();
 		size_t data_len = front_buf->readable_bytes() - sizeof(len);
-
 		if (len == 0 || len > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LIB_LOG_TRACE("cid:%d role_id:%ld data block len = %u", parent_->get_cid(), parent_->get_role_id(), len);
+			LIB_LOG_TRACE("cid:%d fd:%d data block len = %u", cid, parent_->get_fd(), len);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();
