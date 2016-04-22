@@ -96,8 +96,8 @@ int Svc_Websocket::handle_send(void){
 		int ret = ::write(parent_->get_fd(), data_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
 			LIB_LOG_TRACE("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
+			parent_->push_block(cid, data_buf);
 			if (errno == EINTR) { /// 被打断, 重写
-				parent_->push_block(cid, data_buf);
 				continue;
 			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
 				return ret;
@@ -191,8 +191,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 				}
 			}
 			payload_length = front_buf->read_uint16();
-		}
-		else if(payload_length == 127){
+		} else if(payload_length == 127){
 			//payload_length = front_buf->read_uint32(); //包大小不可能达到4字节整数
 		}
 		if(mask == 1){
@@ -269,7 +268,6 @@ Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8
 	for(int i = 0; i < payload_length; i++){
 		int j = i % 4;
 		uint8_t c = buf->read_uint8() ^ masking_key[j];
-		//LIB_LOG_ERROR("char is %c", c);
 		data_buf->write_uint8(c);
 	}
 	return data_buf;
@@ -291,56 +289,53 @@ int Svc_Websocket::websocket_handshake(Block_Buffer *buf){
 		buf->reset();
 		parent_->push_block(parent_->get_cid(), buf);
 	}
+
 	std::istringstream s(buff);
-    std::string request;
+	std::string request;
 	char respond[512] = {};
+	std::getline(s, request);
+	if (request[request.size()-1] == '\r') {
+		request.erase(request.end()-1);
+	} else {
+		return -1;
+	}
 
-    std::getline(s, request);
-    if (request[request.size()-1] == '\r') {
-        request.erase(request.end()-1);
-    } else {
-        return -1; 
-    }   
+	std::string header;
+	std::string::size_type end;
+	while (std::getline(s, header) && header != "\r") {
+		if (header[header.size()-1] != '\r') {
+			continue; //end
+		} else {
+			header.erase(header.end()-1);   //remove last char
+		}
 
-    std::string header;
-    std::string::size_type end;
+		end = header.find(": ",0);
+		if (end != std::string::npos) {
+			std::string key = header.substr(0,end);
+			std::string value = header.substr(end+2);
+			header_map[key] = value;
+		}
+	}
 
-    while (std::getline(s, header) && header != "\r") {
-        if (header[header.size()-1] != '\r') {
-            continue; //end
-        } else {
-            header.erase(header.end()-1);   //remove last char
-        }   
+	strcat(respond, "HTTP/1.1 101 Switching Protocols\r\n");
+	strcat(respond, "Connection: upgrade\r\n");
+	strcat(respond, "Upgrade: websocket\r\n");
+	strcat(respond, "Sec-WebSocket-Accept: ");
+	std::string server_key = header_map["Sec-WebSocket-Key"];
+	server_key += MAGIC_KEY;
 
-        end = header.find(": ",0);
-        if (end != std::string::npos) {
-            std::string key = header.substr(0,end);
-            std::string value = header.substr(end+2);
-            header_map[key] = value;
-        }   
-    }
+	SHA1 sha;
+	unsigned int message_digest[5];
+	sha.Reset();
+	sha << server_key.c_str();
+	sha.Result(message_digest);
+	for (int i = 0; i < 5; i++) {
+		message_digest[i] = htonl(message_digest[i]);
+	}
+	server_key = base64_encode(reinterpret_cast<const unsigned char*>(message_digest),20);
+	server_key += "\r\n\r\n";
+	strcat(respond, server_key.c_str());
 	
-    strcat(respond, "HTTP/1.1 101 Switching Protocols\r\n");
-    strcat(respond, "Connection: upgrade\r\n");
-    strcat(respond, "Upgrade: websocket\r\n");
-
-    strcat(respond, "Sec-WebSocket-Accept: ");
-    std::string server_key = header_map["Sec-WebSocket-Key"];
-    server_key += MAGIC_KEY;
-
-    SHA1 sha;
-    unsigned int message_digest[5];
-    sha.Reset();
-    sha << server_key.c_str();
-
-    sha.Result(message_digest);
-    for (int i = 0; i < 5; i++) {
-        message_digest[i] = htonl(message_digest[i]);
-    }   
-    server_key = base64_encode(reinterpret_cast<const unsigned char*>(message_digest),20);
-    server_key += "\r\n\r\n";
-    strcat(respond, server_key.c_str());
-
 	websocket_connected_ = true;
 	//握手包必然是该连接第一个包，这里直接将响应内容写入内核发送缓存
 	write(parent_->get_fd(), respond, strlen(respond));
@@ -368,16 +363,13 @@ Block_Buffer *Svc_Websocket::make_websocket_frame(Block_Buffer *buf, uint8_t *op
 	if(msg_len <= 125){
 		second_byte = (mask << 7) | (uint8_t)msg_len;
 		data_buf->write_uint8(second_byte);
-	}
-	else if(msg_len > 125 && msg_len < 65535){
+	} else if(msg_len > 125 && msg_len < 65535){
 		second_byte = (mask << 7) | 0x7e;
 		data_buf->write_uint8(second_byte);
 		data_buf->write_int16(msg_len);
-	}
-	else{
+	} else {
 		//单个包大小有限制
 	}
-	//LIB_LOG_ERROR("PAYLOADLENGTH:%d", msg_len);
 	data_buf->copy(buf->get_read_ptr(), msg_len);
 	return data_buf;
 }
