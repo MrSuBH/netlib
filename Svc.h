@@ -131,9 +131,6 @@ private:
 };
 
 inline void Svc::reset(void) {
-	server_ = 0;
-	connector_ = 0;
-
 	cid_ = 0;
 	is_closed_ = false;
 	is_reg_recv_ = false;
@@ -148,6 +145,8 @@ inline void Svc::reset(void) {
 		delete handler_;
 		handler_ = 0;
 	}
+	server_ = 0;
+	connector_ = 0;
 	Event_Handler::reset();
 }
 
