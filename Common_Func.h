@@ -75,7 +75,7 @@ inline void backstrace_string(std::string &res) {
 	}
 }
 
-long elf_hash(const char *str, unsigned int len);
+unsigned int elf_hash(const char *str, unsigned int len);
 void make_session(std::string& account, std::string& session);
 int validate_md5(const char *key, const char *account, const char *time, const char *flag);
 

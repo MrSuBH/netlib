@@ -11,10 +11,10 @@
 #include <sstream>
 #include <openssl/md5.h>
 
-long elf_hash(const char *str, unsigned int len) {
-	long int hash = 0, x = 0;
+unsigned int elf_hash(const char *str, unsigned int len) {
+	unsigned int hash = 0, x = 0;
 
-	for(size_t i = 0; i < len; ++i) {
+	for(unsigned int i = 0; i < len; ++i) {
 		hash = (hash << 4) + str[i];
 		if((x = hash & 0xF0000000L) != 0) {
 			hash ^= (x >> 24);
@@ -27,7 +27,7 @@ long elf_hash(const char *str, unsigned int len) {
 
 void make_session(std::string& account, std::string& session){
 	long timesamp = Time_Value::gettimeofday().sec() + Time_Value::gettimeofday().usec();
-	long hash = elf_hash(account.c_str(), account.size());
+	unsigned int hash = elf_hash(account.c_str(), account.size());
 	int rand = random() % hash;
 
 	std::stringstream stremsession;
