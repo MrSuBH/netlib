@@ -192,27 +192,27 @@ class Thread_Notify
 {
 public:
 	Thread_Notify(){
-		::pthread_mutexattr_init(&m_mutexattr);
-		::pthread_mutexattr_settype(&m_mutexattr, PTHREAD_MUTEX_RECURSIVE);
-		::pthread_mutex_init(&m_mutex, &m_mutexattr);
-		::pthread_cond_init(&m_cond, NULL);
+		::pthread_mutexattr_init(&mutexattr_);
+		::pthread_mutexattr_settype(&mutexattr_, PTHREAD_MUTEX_RECURSIVE);
+		::pthread_mutex_init(&mutex_, &mutexattr_);
+		::pthread_cond_init(&cond_, NULL);
 	}
 
 	~Thread_Notify(){
-		::pthread_mutexattr_destroy(&m_mutexattr);
-		::pthread_mutex_destroy(&m_mutex);
-		::pthread_cond_destroy(&m_cond);
+		::pthread_mutexattr_destroy(&mutexattr_);
+		::pthread_mutex_destroy(&mutex_);
+		::pthread_cond_destroy(&cond_);
 	}
 
-	void Lock() { pthread_mutex_lock(&m_mutex); }
-	void Unlock() { pthread_mutex_unlock(&m_mutex); }
-	void Wait() { pthread_cond_wait(&m_cond, &m_mutex); }
-	void Signal() { pthread_cond_signal(&m_cond); }
-private:
-	pthread_mutex_t 	m_mutex;
-	pthread_mutexattr_t	m_mutexattr;
+	void lock() { pthread_mutex_lock(&mutex_); }
+	void unlock() { pthread_mutex_unlock(&mutex_); }
+	void wait() { pthread_cond_wait(&cond_, &mutex_); }
+	void signal() { pthread_cond_signal(&cond_); }
 
-	pthread_cond_t 		m_cond;
+private:
+	pthread_mutex_t mutex_;
+	pthread_mutexattr_t	mutexattr_;
+	pthread_cond_t cond_;
 };
 //////////////////////////////////////////
 

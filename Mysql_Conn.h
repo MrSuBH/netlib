@@ -12,8 +12,6 @@
 #include <string>
 #include <map>
 #include <list>
-#include <stdint.h>
-#include <stdlib.h>
 #include <mysql_connection.h>
 #include <mysql_driver.h>
 #include <cppconn/driver.h>
@@ -22,84 +20,85 @@
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
 
-namespace sql {
-class Driver;
-class Connection;
-class ResultSet;
-class Statement;
-}
-
-class Mysql_DB_Pool;
-
-class Mysql_DB_Conn {
+class DataBuf : public std::streambuf
+{
 public:
-	Mysql_DB_Conn(Mysql_DB_Pool* pDBPool);
-	virtual ~Mysql_DB_Conn();
-	int Init();
-
-	sql::ResultSet* ExecuteQuery(const char* sql_query);
-	int ExecuteUpdate(const char* sql_query);
-	bool Execute(const char* sql_query);
-
-	std::string& GetPoolName();
-
-private:
-	Mysql_DB_Pool* 	m_pDBPool;	// to get MySQL server information
-	sql::Connection*  conn;
-	sql::Statement* stmt ;
+	DataBuf(char* buf, size_t len) {
+		setg(buf, buf, buf+len);
+    }
 };
 
-class Mysql_DB_Pool {
+class Mysql_Pool;
+class Mysql_Conn {
 public:
-	Mysql_DB_Pool(std::string& pool_name,  std::string& db_server_ip, uint32_t db_server_port,
+	Mysql_Conn(Mysql_Pool* mysql_pool);
+	virtual ~Mysql_Conn();
+
+	int init(void);
+	sql::PreparedStatement* create_pstmt(const char* str_sql);
+	std::string& get_pool_name();
+
+	sql::ResultSet* execute_query(const char* str_sql);
+	int execute_update(const char* str_sql);
+	bool execute(const char* str_sql);
+
+private:
+	Mysql_Pool* mysql_pool_;
+	sql::Connection*  conn_;
+	sql::Statement* stmt_ ;
+	sql::PreparedStatement* pstmt_;
+};
+
+class Mysql_Pool {
+public:
+	Mysql_Pool(std::string& pool_name,  std::string& server_ip, uint32_t server_port,
 			std::string& username,  std::string& password,  std::string& db_name, int32_t max_conn_cnt);
-	virtual ~Mysql_DB_Pool();
+	virtual ~Mysql_Pool();
 
-	int Init();
-	Mysql_DB_Conn* GetDBConn();
-	void RelDBConn(Mysql_DB_Conn* pConn);
+	int init(void);
+	Mysql_Conn* get_mysql_conn();
+	void rel_mysql_conn(Mysql_Conn* conn);
 
-	inline std::string& GetPoolName() { return m_pool_name; }
-	inline std::string& GetDBServerIP() { return m_db_server_ip; }
-	inline uint32_t GetDBServerPort() { return m_db_server_port; }
-	inline std::string& GetUsername() { return m_username; }
-	inline std::string& GetPasswrod() { return m_password; }
-	inline std::string& GetDBName() { return m_db_name; }
-	inline sql::Driver* GetDriver(){return driver;}
+	inline std::string& get_pool_name() { return pool_name_; }
+	inline std::string& get_server_ip() { return server_ip_; }
+	inline int32_t get_server_port() { return server_port_; }
+	inline std::string& get_username() { return username_; }
+	inline std::string& get_passwrod() { return password_; }
+	inline std::string& get_db_name() { return db_name_; }
+	inline sql::Driver* get_driver(){return driver_;}
 
 private:
-	std::string 		m_pool_name;
-	std::string 		m_db_server_ip;
-	uint32_t				m_db_server_port;
-	std::string 		m_username;
-	std::string 		m_password;
-	std::string 		m_db_name;
-	int32_t				m_db_cur_conn_cnt;
-	int32_t 				m_db_max_conn_cnt;
+	std::string 		pool_name_;
+	std::string 		server_ip_;
+	int32_t				server_port_;
+	std::string 		username_;
+	std::string 		password_;
+	std::string 		db_name_;
+	int32_t				cur_conn_cnt_;
+	int32_t 				max_conn_cnt_;
 
-	sql::Driver*  driver;
-
-	std::list<Mysql_DB_Conn*>	m_free_list;
-	Thread_Notify	 m_thread_notify;
+	sql::Driver*  driver_;
+	std::list<Mysql_Conn*>	free_list_;
+	Thread_Notify	 thread_notify_;
 };
 
-class Mysql_DB_Manager {
+class Mysql_Manager {
 public:
-	static Mysql_DB_Manager* instance();
-	int Init(std::string& db_host, int db_port, std::string& db_username, std::string& db_password, std::string& db_name, std::string& pool_name, int db_maxconncnt);
+	static Mysql_Manager* instance();
+	int init(std::string& server_ip, int server_port, std::string& username, std::string& password, std::string& db_name, std::string& pool_name, int max_conn_cnt);
 
-	Mysql_DB_Conn* GetDBConn(std::string& dbpool_name);
-	void RelDBConn(Mysql_DB_Conn* pConn);
-
-private:
-	Mysql_DB_Manager();
-	virtual ~Mysql_DB_Manager();
+	Mysql_Conn* get_mysql_conn(std::string& pool_name);
+	void rel_mysql_conn(Mysql_Conn* conn);
 
 private:
-	static Mysql_DB_Manager*		mysql_db_manager;
-	std::map<std::string, Mysql_DB_Pool*>	 m_dbpool_map;
+	Mysql_Manager();
+	virtual ~Mysql_Manager();
+
+private:
+	static Mysql_Manager*	instance_;
+	std::map<std::string, Mysql_Pool*>	 mysql_pool_map_;
 };
 
-#define	MYSQL_DB_MANAGER Mysql_DB_Manager::instance()
+#define	MYSQL_MANAGER Mysql_Manager::instance()
 
 #endif /* LIB_MYSQL_CONN_H_ */

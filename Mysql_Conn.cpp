@@ -11,236 +11,250 @@
 #include "Mysql_Conn.h"
 #include "Lib_Log.h"
 
-#define MIN_DB_CONN_CNT		2
+Mysql_Manager* Mysql_Manager::instance_ = NULL;
 
-Mysql_DB_Manager* Mysql_DB_Manager::mysql_db_manager = NULL;
-
-Mysql_DB_Conn::Mysql_DB_Conn(Mysql_DB_Pool* pPool) {
-	m_pDBPool = pPool;
-	conn = NULL;
-	stmt = NULL;
+Mysql_Conn::Mysql_Conn(Mysql_Pool* mysql_pool) {
+	mysql_pool_ = mysql_pool;
+	conn_ = NULL;
+	stmt_ = NULL;
+	pstmt_ = NULL;
 }
 
-Mysql_DB_Conn::~Mysql_DB_Conn() {
-	if (conn){
-		delete conn;
-		conn = NULL;
+Mysql_Conn::~Mysql_Conn() {
+	if (conn_) {
+		delete conn_;
+		conn_ = NULL;
 	}
 
-	if (stmt){
-		delete stmt;
-		stmt = NULL;
+	if (stmt_) {
+		delete stmt_;
+		stmt_ = NULL;
+	}
+
+	if (pstmt_) {
+		delete pstmt_;
+		pstmt_ = NULL;
 	}
 }
 
-int Mysql_DB_Conn::Init() {
+int Mysql_Conn::init() {
 	std::stringstream stream;
-	stream << m_pDBPool->GetDBServerPort();
-	std::string url = std::string("tcp://") + m_pDBPool->GetDBServerIP() + ":" + stream.str();
+	stream << mysql_pool_->get_server_port();
+	std::string url = std::string("tcp://") + mysql_pool_->get_server_ip() + ":" + stream.str();
 	try {
-			conn = m_pDBPool->GetDriver()->connect(url.c_str(), m_pDBPool->GetUsername(), m_pDBPool->GetPasswrod());
-			conn->setSchema(m_pDBPool->GetDBName());
-			stmt = conn->createStatement();
-			if (conn->isClosed()) {
-				LIB_LOG_DEBUG("connect mysql error, url = [%s], user = [%s], pw = [%s]", url.c_str(), m_pDBPool->GetUsername().c_str(), m_pDBPool->GetPasswrod().c_str());
-				return 1;
-			}
+		conn_ = mysql_pool_->get_driver()->connect(url.c_str(), mysql_pool_->get_username(), mysql_pool_->get_passwrod());
+		conn_->setSchema(mysql_pool_->get_db_name());
+		if (conn_->isClosed()) {
+			LIB_LOG_ERROR("connect mysql error, url = [%s], user = [%s], password = [%s]", url.c_str(), mysql_pool_->get_username().c_str(), mysql_pool_->get_passwrod().c_str());
+			return 1;
+		}
+
+		stmt_ = conn_->createStatement();
 	}
 	catch (sql::SQLException &e) {
-			int err_code = e.getErrorCode();
-			LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
-			return 2;
+		int err_code = e.getErrorCode();
+		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		return 2;
 	}
 
 	return 0;
 }
 
-sql::ResultSet* Mysql_DB_Conn::ExecuteQuery(const char* sql_query) {
-	sql::ResultSet  *res;
-
-	try {
-		res = stmt->executeQuery(sql_query);
-	}catch (sql::SQLException &e) {
-			int err_code = e.getErrorCode();
-			LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
-			return NULL;
+sql::PreparedStatement* Mysql_Conn::create_pstmt(const char* str_sql) {
+	if (pstmt_) {
+		delete pstmt_;
+		pstmt_ = NULL;
 	}
 
+	try {
+		pstmt_ = conn_->prepareStatement(str_sql);
+	} catch (sql::SQLException &e) {
+			int err_code = e.getErrorCode();
+			LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+			return NULL;
+	}
+	return pstmt_;
+}
+
+std::string& Mysql_Conn::get_pool_name() {
+	return mysql_pool_->get_pool_name();
+}
+
+sql::ResultSet* Mysql_Conn::execute_query(const char* str_sql) {
+	sql::ResultSet *res = NULL;
+	try {
+		res = stmt_->executeQuery(str_sql);
+	} catch (sql::SQLException &e) {
+			int err_code = e.getErrorCode();
+			LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+			return NULL;
+	}
 	return res;
 }
 
-int Mysql_DB_Conn::ExecuteUpdate(const char* sql_query) {
-	int ret;
-
+int Mysql_Conn::execute_update(const char* str_sql) {
+	int ret = 0;
 	try {
-		ret = stmt->executeUpdate(sql_query);
-	}catch (sql::SQLException &e) {
+		ret = stmt_->executeUpdate(str_sql);
+	} catch (sql::SQLException &e) {
 		int err_code = e.getErrorCode();
-		LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 		return -1;
 	}
-
 	return ret;
 }
 
-bool Mysql_DB_Conn::Execute(const char* sql_query) {
-	int ret;
-
+bool Mysql_Conn::execute(const char* str_sql) {
+	int ret = 0;
 	try {
-		ret = stmt->execute(sql_query);
-	}catch (sql::SQLException &e) {
+		ret = stmt_->execute(str_sql);
+	} catch (sql::SQLException &e) {
 		int err_code = e.getErrorCode();
-		LIB_LOG_DEBUG("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 		return -1;
 	}
-
 	return ret;
 }
 
-std::string& Mysql_DB_Conn::GetPoolName() {
-	return m_pDBPool->GetPoolName();
-}
-
-////////////////
-Mysql_DB_Pool::Mysql_DB_Pool(std::string& pool_name,  std::string& db_server_ip, uint32_t db_server_port,
-		std::string& username,  std::string& password,  std::string& db_name, int32_t max_conn_cnt) {
-	m_pool_name = pool_name;
-	m_db_server_ip = db_server_ip;
-	m_db_server_port = db_server_port;
-	m_username = username;
-	m_password = password;
-	m_db_name = db_name;
-	m_db_max_conn_cnt = max_conn_cnt;
-	m_db_cur_conn_cnt = MIN_DB_CONN_CNT;
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+Mysql_Pool::Mysql_Pool(std::string& pool_name,  std::string& server_ip, uint32_t server_port,
+		std::string& username, std::string& password,  std::string& db_name, int32_t max_conn_cnt) {
+	pool_name_ = pool_name;
+	server_ip_ = server_ip;
+	server_port_ = server_port;
+	username_ = username;
+	password_ = password;
+	db_name_ = db_name;
+	max_conn_cnt_ = max_conn_cnt;
+	cur_conn_cnt_ = 2;
 
 	try {
-	        driver = get_driver_instance();
-	    } catch (sql::SQLException&e) {
-	        perror("驱动连接出错;\n");
-	    } catch (std::runtime_error&e) {
-	        perror("运行出错了\n");
-	   }
+		driver_ = get_driver_instance();
+	} catch (sql::SQLException&e) {
+		perror("mysql驱动连接出错;\n");
+	} catch (std::runtime_error&e) {
+		perror("mysql运行时错误\n");
+	}
 }
 
-Mysql_DB_Pool::~Mysql_DB_Pool() {
-	for (std::list<Mysql_DB_Conn*>::iterator it = m_free_list.begin(); it != m_free_list.end(); it++) {
-		Mysql_DB_Conn* pConn = *it;
+Mysql_Pool::~Mysql_Pool() {
+	for (std::list<Mysql_Conn*>::iterator it = free_list_.begin(); it != free_list_.end(); it++) {
+		Mysql_Conn* pConn = *it;
 		delete pConn;
 	}
 
-	m_free_list.clear();
+	free_list_.clear();
 }
 
-int Mysql_DB_Pool::Init() {
-	for (int i = 0; i < m_db_cur_conn_cnt; i++) {
-		Mysql_DB_Conn* pDBConn = new Mysql_DB_Conn(this);
-		int ret = pDBConn->Init();
+int Mysql_Pool::init() {
+	for (int i = 0; i < cur_conn_cnt_; i++) {
+		Mysql_Conn* pDBConn = new Mysql_Conn(this);
+		int ret = pDBConn->init();
 		if (ret) {
 			delete pDBConn;
 			return ret;
 		}
-		m_free_list.push_back(pDBConn);
+		free_list_.push_back(pDBConn);
 	}
 
-	LIB_LOG_DEBUG("db pool: %s, size: %d", m_pool_name.c_str(), (int)m_free_list.size());
+	LIB_LOG_ERROR("db pool: %s, size: %d", pool_name_.c_str(), (int)free_list_.size());
 	return 0;
 }
 
-Mysql_DB_Conn* Mysql_DB_Pool::GetDBConn() {
-	m_thread_notify.Lock();
+Mysql_Conn* Mysql_Pool::get_mysql_conn() {
+	thread_notify_.lock();
 
-	while (m_free_list.empty()) {
-		if (m_db_cur_conn_cnt >= m_db_max_conn_cnt) {
-			m_thread_notify.Wait();
+	while (free_list_.empty()) {
+		if (cur_conn_cnt_ >= max_conn_cnt_) {
+			thread_notify_.wait();
 		} else {
-			Mysql_DB_Conn* pDBConn = new Mysql_DB_Conn(this);
-			int ret = pDBConn->Init();
+			Mysql_Conn* mysql_conn = new Mysql_Conn(this);
+			int ret = mysql_conn->init();
 			if (ret) {
-				delete pDBConn;
-				m_thread_notify.Unlock();
+				delete mysql_conn;
+				thread_notify_.unlock();
 				return NULL;
 			} else {
-				m_free_list.push_back(pDBConn);
-				m_db_cur_conn_cnt++;
-				LIB_LOG_DEBUG("new db connection: %s, conn_cnt: %d", m_pool_name.c_str(), m_db_cur_conn_cnt);
+				free_list_.push_back(mysql_conn);
+				cur_conn_cnt_++;
+				LIB_LOG_ERROR("new db connection: %s, conn_cnt: %d", pool_name_.c_str(), cur_conn_cnt_);
 			}
 		}
 	}
 
-	Mysql_DB_Conn* pConn = m_free_list.front();
-	m_free_list.pop_front();
-	m_thread_notify.Unlock();
+	Mysql_Conn* mysql_conn = free_list_.front();
+	free_list_.pop_front();
+	thread_notify_.unlock();
 
-	return pConn;
+	return mysql_conn;
 }
 
-void Mysql_DB_Pool::RelDBConn(Mysql_DB_Conn* pConn) {
-	m_thread_notify.Lock();
+void Mysql_Pool::rel_mysql_conn(Mysql_Conn* conn) {
+	thread_notify_.lock();
 
-	std::list<Mysql_DB_Conn*>::iterator it = m_free_list.begin();
-	for (; it != m_free_list.end(); it++) {
-		if (*it == pConn) {
+	std::list<Mysql_Conn*>::iterator it = free_list_.begin();
+	for (; it != free_list_.end(); it++) {
+		if (*it == conn) {
 			break;
 		}
 	}
 
-	if (it == m_free_list.end()) {
-		m_free_list.push_back(pConn);
+	if (it == free_list_.end()) {
+		free_list_.push_back(conn);
 	}
 
-	m_thread_notify.Signal();
-	m_thread_notify.Unlock();
+	thread_notify_.signal();
+	thread_notify_.unlock();
 }
 
 /////////////////
-Mysql_DB_Manager::Mysql_DB_Manager() {}
+Mysql_Manager::Mysql_Manager() {}
 
-Mysql_DB_Manager::~Mysql_DB_Manager() {
-	std::map<std::string, Mysql_DB_Pool*>::iterator 	it;
-	for(it=m_dbpool_map.begin(); it!=m_dbpool_map.end(); ++it){
+Mysql_Manager::~Mysql_Manager() {
+	for(std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.begin(); it != mysql_pool_map_.end(); ++it) {
 		delete it->second;
 	}
-	m_dbpool_map.clear();
+	mysql_pool_map_.clear();
 }
 
-Mysql_DB_Manager* Mysql_DB_Manager::instance() {
-	if (!mysql_db_manager) {
-		mysql_db_manager = new Mysql_DB_Manager();
+Mysql_Manager* Mysql_Manager::instance() {
+	if (!instance_) {
+		instance_ = new Mysql_Manager();
 	}
 
-	return mysql_db_manager;
+	return instance_;
 }
 
-int Mysql_DB_Manager::Init(std::string& db_host, int db_port, std::string& db_username, std::string& db_password, std::string& db_name, std::string& pool_name, int db_maxconncnt) {
-		Mysql_DB_Pool* pDBPool = new Mysql_DB_Pool(pool_name, db_host, db_port, db_username, db_password, db_name, db_maxconncnt);
+int Mysql_Manager::init(std::string& server_ip, int server_port, std::string& username, std::string& password, std::string& db_name, std::string& pool_name, int max_conn_cnt) {
+		Mysql_Pool* mysql_pool = new Mysql_Pool(pool_name, server_ip, server_port, username, password, db_name, max_conn_cnt);
 
-		if (pDBPool->Init()) {
-			delete pDBPool;
-			LIB_LOG_FATAL("init db instance failed db_host:%s, db_port:%d, db_username:%s, db_password:%s, db_name:%s, pool_name:%s",
-					db_host.c_str(), db_port, db_username.c_str(), db_password.c_str(), db_name.c_str(), pool_name.c_str());
+		if (mysql_pool->init()) {
+			delete mysql_pool;
+			LIB_LOG_FATAL("init mysql failed server_ip:%s, server_port:%d, username:%s, password:%s, db_name:%s, pool_name:%s",
+					server_ip.c_str(), server_port, username.c_str(), password.c_str(), db_name.c_str(), pool_name.c_str());
 			return -1;
 		}
-		m_dbpool_map.insert(make_pair(pool_name, pDBPool));
+		mysql_pool_map_.insert(make_pair(pool_name, mysql_pool));
 
 	return 0;
 }
 
-Mysql_DB_Conn* Mysql_DB_Manager::GetDBConn(std::string& dbpool_name) {
-	std::map<std::string, Mysql_DB_Pool*>::iterator it = m_dbpool_map.find(dbpool_name);
-	if (it == m_dbpool_map.end()) {
+Mysql_Conn* Mysql_Manager::get_mysql_conn(std::string& pool_name) {
+	std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.find(pool_name);
+	if (it == mysql_pool_map_.end()) {
 		return NULL;
 	} else {
-		return it->second->GetDBConn();
+		return it->second->get_mysql_conn();
 	}
 }
 
-void Mysql_DB_Manager::RelDBConn(Mysql_DB_Conn* pConn) {
-	if (!pConn) {
+void Mysql_Manager::rel_mysql_conn(Mysql_Conn* conn) {
+	if (!conn) {
 		return;
 	}
 
-	std::map<std::string, Mysql_DB_Pool*>::iterator it = m_dbpool_map.find(pConn->GetPoolName());
-	if (it != m_dbpool_map.end()) {
-		it->second->RelDBConn(pConn);
+	std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.find(conn->get_pool_name());
+	if (it != mysql_pool_map_.end()) {
+		it->second->rel_mysql_conn(conn);
 	}
 }
