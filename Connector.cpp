@@ -6,7 +6,7 @@
  */
 
 #include "Connector.h"
-#include "Misc.h"
+#include "Public_Define.h"
 
 int Connector_Connect::connect_svc(int connfd) {
 	LIB_LOG_DEBUG("connfd=%d", connfd);

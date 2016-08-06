@@ -11,6 +11,20 @@
 #include <sstream>
 #include <openssl/md5.h>
 
+void set_color(int fd, Color color) {
+	char buffer[32];
+	snprintf(buffer, sizeof(buffer), "\x1b[%d%sm",
+			color >= LRED ? (color - 10) : color,
+			color >= LRED ? ";1" : ""
+			);
+	write(fd, buffer, strlen(buffer));
+}
+
+void reset_color(int fd) {
+	const char* s = "\x1b[0m";
+	write(fd, s, strlen(s));
+}
+
 int elf_hash(const char *str, int len) {
 	int hash = 0, x = 0;
 

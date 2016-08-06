@@ -12,7 +12,6 @@
 #include "Block_Buffer.h"
 #include "Thread_Mutex.h"
 #include "Lib_Log.h"
-#include "Misc.h"
 #include <vector>
 
 class Block_Pool_Group {

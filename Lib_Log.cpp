@@ -8,17 +8,15 @@
 #include <stdarg.h>
 #include <execinfo.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <errno.h>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
 #include "Lib_Log.h"
 #include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
+#include "Common_Func.h"
 
 Lib_Log::Lib_Log(void) : file_switcher_(false) { }
 
@@ -111,6 +109,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 
 	switch (log_flag) {
 	case LIB_LOG_TRACE: {
+		set_color(STDERR_FILENO, MAGENTA);
 		int nptrs;
 		void *buffer[backtrace_size];
 		char **strings;
@@ -127,13 +126,23 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		free(strings);
 		break;
 	}
-	case LIB_LOG_DEBUG:
-	case LIB_LOG_INFO:
+	case LIB_LOG_DEBUG: {
+		set_color(STDERR_FILENO, WHITE);
+		msg_stream << std::endl;
+		break;
+	}
+	case LIB_LOG_INFO: {
+		set_color(STDERR_FILENO, LGREEN);
+		msg_stream << std::endl;
+		break;
+	}
 	case LIB_LOG_WARN: {
+		set_color(STDERR_FILENO, LBLUE);
 		msg_stream << std::endl;
 		break;
 	}
 	case LIB_LOG_ERROR: {
+		set_color(STDERR_FILENO, LRED);
 		msg_stream << ", errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
@@ -141,6 +150,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		break;
 	}
 	case LIB_LOG_FATAL: {
+		set_color(STDERR_FILENO, YELLOW);
 		msg_stream << "errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
@@ -165,6 +175,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 	}
 	else {
 		std::cerr << msg_stream.str();
+		reset_color(STDERR_FILENO);
 	}
 	return ;
 }

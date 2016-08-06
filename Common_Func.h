@@ -75,6 +75,9 @@ inline void backstrace_string(std::string &res) {
 	}
 }
 
+void set_color(int fd, Color color);
+void reset_color(int fd);
+
 int elf_hash(const char *str, int len);
 void make_session(std::string& account, std::string& session);
 int validate_md5(const char *key, const char *account, const char *time, const char *flag);

@@ -15,9 +15,10 @@
 #include "Log.h"
 #include "Log_Connector.h"
 #include "Block_Buffer.h"
+#include "Common_Func.h"
 
 Log::Log(void):
-  log_type_(LOG_MISC),
+  log_type_(0),
   log_sub_type_(0),
   file_switcher_(false),
   msg_time_(2000)
@@ -108,6 +109,7 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 
 	switch (log_flag) {
 	case LOG_TRACE: {
+		set_color(STDERR_FILENO, MAGENTA);
 		int nptrs;
 		void *buffer[backtrace_size];
 		char **strings;
@@ -124,13 +126,23 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		free(strings);
 		break;
 	}
-	case LOG_DEBUG:
-	case LOG_INFO:
+	case LOG_DEBUG: {
+		set_color(STDERR_FILENO, WHITE);
+		msg_stream << std::endl;
+		break;
+	}
+	case LOG_INFO: {
+		set_color(STDERR_FILENO, LGREEN);
+		msg_stream << std::endl;
+		break;
+	}
 	case LOG_WARN: {
+		set_color(STDERR_FILENO, LBLUE);
 		msg_stream << std::endl;
 		break;
 	}
 	case LOG_ERROR: {
+		set_color(STDERR_FILENO, LRED);
 		msg_stream << ", errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
@@ -138,6 +150,7 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		break;
 	}
 	case LOG_FATAL: {
+		set_color(STDERR_FILENO, YELLOW);
 		msg_stream << "errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
 		strerror_r(errno, line_buf, sizeof(line_buf));
@@ -160,6 +173,7 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		logging_file(msg_stream);
 	} else {
 		std::cerr << msg_stream.str();
+		reset_color(STDERR_FILENO);
 	}
 	return ;
 }
@@ -191,7 +205,6 @@ void Log::show_msg_time(Time_Value &now) {
 	if (now < show_time_) return ;
 
 	show_msg_time();
-
 	show_time_ += Time_Value(86400);
 }
 
@@ -209,11 +222,8 @@ void Log::show_msg_time(void) {
 	}
 
 	std::sort(msg_time_vec.begin(), msg_time_vec.end(), Msg_Time_Sort_Struct());
-
-	LOG_DEBUG("msg process time start --------------------------------------");
 	for (Msg_Process_Time_Vec::iterator it = msg_time_vec.begin(); it != msg_time_vec.end(); ++it) {
 		double avg = (*it).times ? (*it).tv.sec()/(*it).times : 0.0;
 		LOG_DEBUG("msg process time msg_id = %d, times = %d sec = %ld usec = %ld avg:%ld", (*it).msg_id, (*it).times, (*it).tv.sec(), (*it).tv.usec(), avg);
 	}
-	LOG_DEBUG("msg process time end --------------------------------------");
 }

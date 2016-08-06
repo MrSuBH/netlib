@@ -11,6 +11,7 @@
 #include "Event_Handler.h"
 #include "Block_List.h"
 #include "Thread_Mutex.h"
+#include "Public_Define.h"
 
 class Block_Buffer;
 class Server;
@@ -46,12 +47,6 @@ protected:
 
 	size_t max_list_size_;
 	size_t max_pack_size_;
-};
-
-enum NetWork_Protocol {
-	NETWORK_PROTOCOL_TCP = 0,
-	NETWORK_PROTOCOL_UDP = 1,
-	NETWORK_PROTOCOL_WEBSOCKET = 2
 };
 
 class Svc: public Event_Handler {
