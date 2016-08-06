@@ -42,7 +42,7 @@ int Svc_Websocket::handle_recv(void){
 	int cid = parent_->get_cid();
 	Block_Buffer *buf = parent_->pop_block(cid);
 	if (! buf) {
-		LIB_LOG_TRACE("websocket pop_block fail, cid:%d", cid);
+		LIB_LOG_ERROR("websocket pop_block fail, cid:%d", cid);
 		return -1;
 	}
 	buf->reset();
@@ -58,12 +58,12 @@ int Svc_Websocket::handle_recv(void){
 			if (errno == EWOULDBLOCK)
 				break;
 
-			LIB_LOG_TRACE("websocket read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
+			LIB_LOG_ERROR("websocket read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
 			return 0;
 		} else if (n == 0) { /// EOF
-			LIB_LOG_TRACE("websocket read eof close cid:%d fd=%d", cid, parent_->get_fd());
+			LIB_LOG_ERROR("websocket read eof close cid:%d fd=%d", cid, parent_->get_fd());
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
 			return 0;
@@ -95,7 +95,7 @@ int Svc_Websocket::handle_send(void){
 		int cid = parent_->get_cid();
 		int ret = ::write(parent_->get_fd(), data_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
-			LIB_LOG_TRACE("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
+			LIB_LOG_ERROR("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			parent_->push_block(cid, data_buf);
 			if (errno == EINTR) { /// 被打断, 重写
 				continue;
@@ -136,7 +136,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 	while (! recv_block_list_.empty()) {
 		front_buf = recv_block_list_.front();
 		if (! front_buf) {
-			LIB_LOG_TRACE("front_buf == 0");
+			LIB_LOG_ERROR("front_buf == 0");
 			continue;
 		}
 
@@ -147,7 +147,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 		}
 
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
-			LIB_LOG_TRACE("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
+			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			parent_->push_block(parent_->get_cid(), front_buf);
@@ -169,7 +169,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 		fin = tmp >> 7;
 		opcode = tmp & 0x0f;
 		if(opcode == OPCODE_CLOSE) { // websocket被客户端关闭
-			LIB_LOG_TRACE("cid:%d fin:%d websocket on close.", cid, fin);
+			LIB_LOG_ERROR("cid:%d fin:%d websocket on close.", cid, fin);
 			recv_block_list_.pop_front();
 			front_buf->reset();
 			parent_->push_block(parent_->get_cid(), front_buf);
@@ -211,7 +211,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 
 		size_t data_len = front_buf->readable_bytes();
 		if (payload_length == 0 || payload_length > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LIB_LOG_TRACE("cid:%d data block len = %u", parent_->get_cid(), payload_length);
+			LIB_LOG_ERROR("cid:%d data block len = %u", parent_->get_cid(), payload_length);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();

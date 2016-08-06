@@ -254,7 +254,6 @@ int Object_Pool<Obj, LOCK>::push(Obj *obj) {
 	typename Obj_Set::iterator used_obj_it = this->used_obj_list_.find(obj);
 	if (used_obj_it == this->used_obj_list_.end()) {
 		LIB_LOG_TRACE("***** Object_Pool<Obj, LOCK>::push(Obj *obj) can't find this Object Block !!!");
-		//LIB_LOG_FATAL();
 		return -1;
 	}
 

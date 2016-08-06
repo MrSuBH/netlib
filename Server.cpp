@@ -88,7 +88,7 @@ int Server_Pack::packed_data_handler(Block_Vector &block_vec) {
 }
 
 int Server_Pack::drop_handler(int cid) {
-	LIB_LOG_DEBUG("drop_handler, cid = %d.", cid);
+	LIB_LOG_INFO("drop_handler, cid = %d.", cid);
 	server_->drop_cid_list().push_back(cid);
 	server_->recycle_svc(cid);
 	return 0;

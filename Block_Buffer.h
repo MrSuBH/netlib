@@ -244,7 +244,7 @@ void Block_Buffer::make_space(size_t len) {
 	if (cond_pos < 0) {
 		read_begin = init_offset_ = read_index_;
 		head_size = 0;
-		LIB_LOG_TRACE("read_index_ = %u, init_offset_ = %u", read_index_, init_offset_);
+		LIB_LOG_ERROR("read_index_ = %u, init_offset_ = %u", read_index_, init_offset_);
 	} else {
 		read_begin = init_offset_;
 		head_size = cond_pos;
@@ -316,7 +316,7 @@ int8_t Block_Buffer::peek_int8() {
 	if (verify_read(sizeof(v))) {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -335,7 +335,7 @@ int16_t Block_Buffer::peek_int16() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -354,7 +354,7 @@ int32_t Block_Buffer::peek_int32() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -373,7 +373,7 @@ int64_t Block_Buffer::peek_int64() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -384,7 +384,7 @@ uint8_t Block_Buffer::peek_uint8() {
 	if (verify_read(sizeof(v))) {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -402,7 +402,7 @@ uint16_t Block_Buffer::peek_uint16() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -420,7 +420,7 @@ uint32_t Block_Buffer::peek_uint32() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -439,7 +439,7 @@ uint64_t Block_Buffer::peek_uint64() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -464,7 +464,7 @@ bool Block_Buffer::peek_bool() {
 	if (verify_read(sizeof(v))) {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -484,7 +484,7 @@ int8_t Block_Buffer::read_int8() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 		read_index_ += sizeof(v);
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -505,7 +505,7 @@ int16_t Block_Buffer::read_int16() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -526,7 +526,7 @@ int32_t Block_Buffer::read_int32() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -547,7 +547,7 @@ int64_t Block_Buffer::read_int64() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -559,7 +559,7 @@ uint8_t Block_Buffer::read_uint8() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 		read_index_ += sizeof(v);
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -579,7 +579,7 @@ uint16_t Block_Buffer::read_uint16() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -599,7 +599,7 @@ uint32_t Block_Buffer::read_uint32() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -619,7 +619,7 @@ uint64_t Block_Buffer::read_uint64() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -640,7 +640,7 @@ double Block_Buffer::read_double() {
 		read_index_ += sizeof(v);
 #endif
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -652,7 +652,7 @@ bool Block_Buffer::read_bool() {
 		memcpy(&v, &(buffer_[read_index_]), sizeof(v));
 		read_index_ += sizeof(v);
 	} else {
-		LIB_LOG_TRACE("out of range");
+		LIB_LOG_ERROR("out of range");
 		return -1;
 	}
 	return v;
@@ -811,7 +811,7 @@ void Block_Buffer::finish_message(void) {
 
 int Block_Buffer::move_data(size_t dest, size_t begin, size_t end) {
 	if (begin >= end) {
-		LIB_LOG_TRACE("begin = %ul, end = %ul, dest = %ul.", begin, end, dest);
+		LIB_LOG_ERROR("begin = %ul, end = %ul, dest = %ul.", begin, end, dest);
 		return -1;
 	}
 	size_t len = end - begin;
@@ -822,7 +822,7 @@ int Block_Buffer::move_data(size_t dest, size_t begin, size_t end) {
 
 int Block_Buffer::insert_head(Block_Buffer *buf) {
 	if (! buf) {
-		LIB_LOG_TRACE("buf == 0");
+		LIB_LOG_ERROR("buf == 0");
 		return -1;
 	}
 

@@ -69,9 +69,9 @@ sql::PreparedStatement* Mysql_Conn::create_pstmt(const char* str_sql) {
 	try {
 		pstmt_ = conn_->prepareStatement(str_sql);
 	} catch (sql::SQLException &e) {
-			int err_code = e.getErrorCode();
-			LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
-			return NULL;
+		int err_code = e.getErrorCode();
+		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		return NULL;
 	}
 	return pstmt_;
 }
@@ -85,9 +85,9 @@ sql::ResultSet* Mysql_Conn::execute_query(const char* str_sql) {
 	try {
 		res = stmt_->executeQuery(str_sql);
 	} catch (sql::SQLException &e) {
-			int err_code = e.getErrorCode();
-			LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
-			return NULL;
+		int err_code = e.getErrorCode();
+		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
+		return NULL;
 	}
 	return res;
 }
@@ -157,7 +157,7 @@ int Mysql_Pool::init() {
 		free_list_.push_back(pDBConn);
 	}
 
-	LIB_LOG_ERROR("db pool: %s, size: %d", pool_name_.c_str(), (int)free_list_.size());
+	LIB_LOG_INFO("db pool: %s, size: %d", pool_name_.c_str(), (int)free_list_.size());
 	return 0;
 }
 
@@ -177,7 +177,7 @@ Mysql_Conn* Mysql_Pool::get_mysql_conn() {
 			} else {
 				free_list_.push_back(mysql_conn);
 				cur_conn_cnt_++;
-				LIB_LOG_ERROR("new db connection: %s, conn_cnt: %d", pool_name_.c_str(), cur_conn_cnt_);
+				LIB_LOG_INFO("new db connection: %s, conn_cnt: %d", pool_name_.c_str(), cur_conn_cnt_);
 			}
 		}
 	}

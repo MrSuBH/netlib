@@ -90,7 +90,7 @@ int Connector_Pack::packed_data_handler(Block_Vector &block_vec) {
 }
 
 int Connector_Pack::drop_handler(int cid) {
-	LIB_LOG_DEBUG("drop_handler, cid = %d.", cid);
+	LIB_LOG_INFO("drop_handler, cid = %d.", cid);
 	connector_->recycle_svc(cid);
 	return 0;
 }

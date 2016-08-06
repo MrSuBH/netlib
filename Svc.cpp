@@ -176,7 +176,7 @@ int Svc::get_peer_addr(std::string &ip, int &port) {
 	socklen_t len = sizeof(sa);
 
 	if (::getpeername(this->get_fd(), (struct sockaddr *)&sa, &len) < 0) {
-		LIB_LOG_TRACE("getpeername wrong, fd:%d", this->get_fd());
+		LIB_LOG_ERROR("getpeername wrong, fd:%d", this->get_fd());
 		return -1;
 	}
 
@@ -194,7 +194,7 @@ int Svc::get_local_addr(std::string &ip, int &port) {
 	socklen_t len = sizeof(sa);
 
 	if (::getsockname(this->get_fd(), (struct sockaddr *)&sa, &len) < 0) {
-		LIB_LOG_TRACE("getsockname wrong, fd:%d", this->get_fd());
+		LIB_LOG_ERROR("getsockname wrong, fd:%d", this->get_fd());
 		return -1;
 	}
 

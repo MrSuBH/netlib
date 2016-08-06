@@ -86,7 +86,7 @@ int Pack::process_packing_list(void) {
 	while (! packing_list_.empty()) {
 		cid = packing_list_.pop_front();
 		if ((svc = find_svc(cid)) == 0) {
-			LIB_LOG_TRACE("cannot find svc cid = %d.", cid);
+			LIB_LOG_ERROR("cannot find svc cid = %d.", cid);
 			continue;
 		}
 		block_vec.clear();
