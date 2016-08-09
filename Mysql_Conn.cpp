@@ -17,7 +17,6 @@ Mysql_Conn::Mysql_Conn(Mysql_Pool* mysql_pool) {
 	mysql_pool_ = mysql_pool;
 	conn_ = NULL;
 	stmt_ = NULL;
-	pstmt_ = NULL;
 }
 
 Mysql_Conn::~Mysql_Conn() {
@@ -29,11 +28,6 @@ Mysql_Conn::~Mysql_Conn() {
 	if (stmt_) {
 		delete stmt_;
 		stmt_ = NULL;
-	}
-
-	if (pstmt_) {
-		delete pstmt_;
-		pstmt_ = NULL;
 	}
 }
 
@@ -61,19 +55,16 @@ int Mysql_Conn::init() {
 }
 
 sql::PreparedStatement* Mysql_Conn::create_pstmt(const char* str_sql) {
-	if (pstmt_) {
-		delete pstmt_;
-		pstmt_ = NULL;
-	}
+	sql::PreparedStatement* pstmt = NULL;
 
 	try {
-		pstmt_ = conn_->prepareStatement(str_sql);
+		pstmt = conn_->prepareStatement(str_sql);
 	} catch (sql::SQLException &e) {
 		int err_code = e.getErrorCode();
 		LIB_LOG_ERROR("SQLException, MySQL Error Code = %d, SQLState = [%s], [%s]", err_code, e.getSQLState().c_str(), e.what());
 		return NULL;
 	}
-	return pstmt_;
+	return pstmt;
 }
 
 std::string& Mysql_Conn::get_pool_name() {

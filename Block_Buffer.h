@@ -80,10 +80,11 @@ public:
 	inline int get_write_idx(void);
 	inline void set_write_idx(int widx);
 
-	inline void copy(Block_Buffer *block);
+	inline void copy(Block_Buffer *buffer);
 	inline void copy(std::string const &str);
-	inline void copy(char const *data, size_t len);
 	inline void copy(void const *data, size_t len);
+	inline void copy(char const *data, size_t len);
+	inline void copy_out(char *data, size_t len);
 
 	inline void ensure_writable_bytes(size_t len);
 
@@ -140,17 +141,12 @@ public:
 	inline void finish_message(void);
 
 	inline int move_data(size_t dest, size_t begin, size_t end);
-
 	inline int insert_head(Block_Buffer *buf);
-
 	inline size_t capacity(void);
-
 	inline void recycle_space(void);
 
 	inline bool is_legal(void);
-
 	inline bool verify_read(size_t s);
-
 	inline void log_binary_data(size_t len);
 
 private:
@@ -277,6 +273,14 @@ const char *Block_Buffer::begin(void) const {
 	return &*buffer_.begin();
 }
 
+void Block_Buffer::copy(Block_Buffer *buffer) {
+	copy(buffer->get_read_ptr(), buffer->readable_bytes());
+}
+
+void Block_Buffer::copy(std::string const &str) {
+	copy(str.data(), str.length());
+}
+
 void Block_Buffer::copy(void const *data, size_t len) {
 	copy(static_cast<const char*> (data), len);
 }
@@ -287,12 +291,9 @@ void Block_Buffer::copy(char const *data, size_t len) {
 	write_index_ += len;
 }
 
-void Block_Buffer::copy(std::string const &str) {
-	copy(str.data(), str.length());
-}
-
-void Block_Buffer::copy(Block_Buffer *block) {
-	copy(block->get_read_ptr(), block->readable_bytes());
+void Block_Buffer::copy_out(char *data, size_t len) {
+	memcpy(data, &(buffer_[read_index_]), len);
+	read_index_ += len;
 }
 
 void Block_Buffer::dump_inner(void) {
@@ -308,7 +309,7 @@ void Block_Buffer::dump(void) {
 }
 
 void Block_Buffer::debug(void) {
-	LIB_LOG_DEBUG("read_index = %ul, write_index = %ul, buffer_.size = %ul.", read_index_, write_index_, buffer_.size());;
+	LIB_LOG_DEBUG("read_index = %u, write_index = %u, buffer_size = %u", read_index_, write_index_, buffer_.size());;
 }
 
 int8_t Block_Buffer::peek_int8() {

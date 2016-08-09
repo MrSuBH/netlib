@@ -10,7 +10,7 @@
 Base_Struct::Base_Struct(Xml &xml, TiXmlNode *node):
 	struct_name_(),
 	table_name_(),
-	key_index_(),
+	index_name_(),
 	msg_id_(0)
 {
 	field_vec_.clear();
@@ -23,7 +23,7 @@ Base_Struct::Base_Struct(Xml &xml, TiXmlNode *node):
 			XML_LOOP_BEGIN(sub_node)
 				if((label_name = xml.get_key(sub_node)) == "head"){
 					table_name_ = xml.get_attr_str(sub_node, "table_name");
-					key_index_ = xml.get_attr_str(sub_node, "key_index");
+					index_name_ = xml.get_attr_str(sub_node, "index_name");
 					msg_id_ = xml.get_attr_int(sub_node, "msg_id");
 				} else {
 					Field_Info field_info;
@@ -42,6 +42,7 @@ Base_Struct::Base_Struct(Xml &xml, TiXmlNode *node):
 Base_Struct::~Base_Struct(){
 	struct_name_.clear();
 	table_name_.clear();
+	index_name_.clear();
 	msg_id_ = 0;
 	field_vec_.clear();
 }

@@ -30,18 +30,18 @@ public:
 	virtual void save_data_vector(Block_Buffer &buffer) {}
 	virtual void delete_data(Block_Buffer &buffer) {}
 
-	inline std::string &struct_name() { return struct_name_; }
-	inline std::string &table_name() { return table_name_; }
-	inline std::string &key_index() { return key_index_; }
+	inline const std::string &struct_name() { return struct_name_; }
+	inline const std::string &table_name() { return table_name_; }
+	inline void set_table_name(const std::string &table_name) { table_name_ = table_name; }
+	inline const std::string &index_name() { return index_name_; }
 	inline int32_t msg_id() { return msg_id_; }
-	inline std::vector<Field_Info>& field_vec() { return field_vec_; }
-
-protected:
+	inline const std::vector<Field_Info>& field_vec() { return field_vec_; }
 	inline bool is_struct(const std::string &type);
 
+private:
 	std::string struct_name_;
 	std::string table_name_;
-	std::string key_index_;
+	std::string index_name_;
 	int32_t msg_id_;
 	std::vector<Field_Info> field_vec_;
 };

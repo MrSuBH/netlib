@@ -46,7 +46,6 @@ private:
 	Mysql_Pool* mysql_pool_;
 	sql::Connection*  conn_;
 	sql::Statement* stmt_ ;
-	sql::PreparedStatement* pstmt_;
 };
 
 class Mysql_Pool {
