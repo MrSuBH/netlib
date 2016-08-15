@@ -1,7 +1,7 @@
 /*
- * HotUpdate.cpp
+ * Hot_Update.cpp
  *
- *  Created on: 2016年3月1日
+ *  Created on: Mar 1,2016
  *      Author: zhangyalei
  */
 
@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include "HotUpdate.h"
+#include "Hot_Update.h"
 
 Hot_Update::Hot_Update() {
 

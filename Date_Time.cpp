@@ -1,9 +1,9 @@
 /*
  * DateTime.cpp
- *
- * Created on: 2016年1月12日
+  *
+ *  Created on: Jan 12,2016
  *      Author: "zhangyalei"
- */
+*/
 
 #include "Date_Time.h"
 

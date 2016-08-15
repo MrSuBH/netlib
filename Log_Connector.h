@@ -1,7 +1,7 @@
 /*
  * Log_Connector.h
  *
- *  Created on: Dec30,2015
+ *  Created on: Dec 30,2015
  *      Author: zhangyalei
  */
 

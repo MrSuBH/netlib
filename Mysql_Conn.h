@@ -1,16 +1,16 @@
 /*
  * Mysql_Conn.h
  *
- *  Created on: 2016年1月4日
+ *  Created on: Jan 4,2016
  *      Author: zhangyalei
  */
 
 #ifndef LIB_MYSQL_CONN_H_
 #define LIB_MYSQL_CONN_H_
 
+#include "boost/unordered_map.hpp"
 #include "Thread_Mutex.h"
 #include <string>
-#include <map>
 #include <list>
 #include <mysql_connection.h>
 #include <mysql_driver.h>
@@ -95,7 +95,7 @@ private:
 
 private:
 	static Mysql_Manager*	instance_;
-	std::map<std::string, Mysql_Pool*>	 mysql_pool_map_;
+	boost::unordered_map<std::string, Mysql_Pool*>	 mysql_pool_map_;
 };
 
 #define	MYSQL_MANAGER Mysql_Manager::instance()

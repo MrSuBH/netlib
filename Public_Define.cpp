@@ -1,7 +1,7 @@
 /*
  * Public_Define.cpp
  *
- *  Created on: 2016年8月6日
+ *  Created on: Aug 6,2016
  *      Author: zhangyalei
  */
 

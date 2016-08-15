@@ -4,7 +4,6 @@
  *  Created on: Dec 16,2015
  *      Author: zhangyalei
  *
- * 		静态链表类
  */
 
 #ifndef SVC_STATIC_LIST_H_

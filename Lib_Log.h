@@ -4,8 +4,6 @@
  *  Created on: Dec 16,2015
  *      Author: zhangyalei
  *
- *  记录底层组件日志写本地文件
- *
  */
 
 #ifndef LIB_LOG_H_

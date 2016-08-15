@@ -1,7 +1,7 @@
 /*
  * Priority_Queue.h
  *
- *  Created on: 2016年3月22日
+ *  Created on: Mar 22,2016
  *      Author: zhangyalei
  */
 

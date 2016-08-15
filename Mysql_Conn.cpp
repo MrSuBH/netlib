@@ -1,13 +1,12 @@
 /*
  * Mysql_Conn.cpp
  *
- *  Created on: 2016年1月4日
+ *  Created on: Jan 4,2016
  *      Author: zhangyalei
  */
 
 #include <iostream>
 #include <sstream>
-#include <stdio.h>
 #include "Mysql_Conn.h"
 #include "Lib_Log.h"
 
@@ -122,16 +121,16 @@ Mysql_Pool::Mysql_Pool(std::string& pool_name,  std::string& server_ip, uint32_t
 	try {
 		driver_ = get_driver_instance();
 	} catch (sql::SQLException&e) {
-		perror("mysql驱动连接出错;\n");
+		LIB_LOG_ERROR("mysql驱动连接出错;\n");
 	} catch (std::runtime_error&e) {
-		perror("mysql运行时错误\n");
+		LIB_LOG_ERROR("mysql运行时错误\n");
 	}
 }
 
 Mysql_Pool::~Mysql_Pool() {
-	for (std::list<Mysql_Conn*>::iterator it = free_list_.begin(); it != free_list_.end(); it++) {
-		Mysql_Conn* pConn = *it;
-		delete pConn;
+	for (std::list<Mysql_Conn*>::iterator iter = free_list_.begin(); iter != free_list_.end(); iter++) {
+		Mysql_Conn* mysql_conn = *iter;
+		delete mysql_conn;
 	}
 
 	free_list_.clear();
@@ -139,13 +138,13 @@ Mysql_Pool::~Mysql_Pool() {
 
 int Mysql_Pool::init() {
 	for (int i = 0; i < cur_conn_cnt_; i++) {
-		Mysql_Conn* pDBConn = new Mysql_Conn(this);
-		int ret = pDBConn->init();
+		Mysql_Conn* mysql_conn = new Mysql_Conn(this);
+		int ret = mysql_conn->init();
 		if (ret) {
-			delete pDBConn;
+			delete mysql_conn;
 			return ret;
 		}
-		free_list_.push_back(pDBConn);
+		free_list_.push_back(mysql_conn);
 	}
 
 	LIB_LOG_INFO("db pool: %s, size: %d", pool_name_.c_str(), (int)free_list_.size());
@@ -183,14 +182,14 @@ Mysql_Conn* Mysql_Pool::get_mysql_conn() {
 void Mysql_Pool::rel_mysql_conn(Mysql_Conn* conn) {
 	thread_notify_.lock();
 
-	std::list<Mysql_Conn*>::iterator it = free_list_.begin();
-	for (; it != free_list_.end(); it++) {
-		if (*it == conn) {
+	std::list<Mysql_Conn*>::iterator iter = free_list_.begin();
+	for (; iter != free_list_.end(); iter++) {
+		if (*iter == conn) {
 			break;
 		}
 	}
 
-	if (it == free_list_.end()) {
+	if (iter == free_list_.end()) {
 		free_list_.push_back(conn);
 	}
 
@@ -202,8 +201,9 @@ void Mysql_Pool::rel_mysql_conn(Mysql_Conn* conn) {
 Mysql_Manager::Mysql_Manager() {}
 
 Mysql_Manager::~Mysql_Manager() {
-	for(std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.begin(); it != mysql_pool_map_.end(); ++it) {
-		delete it->second;
+	for(boost::unordered_map<std::string, Mysql_Pool*>::iterator iter = mysql_pool_map_.begin();
+			iter != mysql_pool_map_.end(); ++iter) {
+		delete iter->second;
 	}
 	mysql_pool_map_.clear();
 }
@@ -221,7 +221,7 @@ int Mysql_Manager::init(std::string& server_ip, int server_port, std::string& us
 
 		if (mysql_pool->init()) {
 			delete mysql_pool;
-			LIB_LOG_FATAL("init mysql failed server_ip:%s, server_port:%d, username:%s, password:%s, db_name:%s, pool_name:%s",
+			LIB_LOG_FATAL("init mysql db failed, server_ip:%s, server_port:%d, username:%s, password:%s, db_name:%s, pool_name:%s",
 					server_ip.c_str(), server_port, username.c_str(), password.c_str(), db_name.c_str(), pool_name.c_str());
 			return -1;
 		}
@@ -231,11 +231,11 @@ int Mysql_Manager::init(std::string& server_ip, int server_port, std::string& us
 }
 
 Mysql_Conn* Mysql_Manager::get_mysql_conn(std::string& pool_name) {
-	std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.find(pool_name);
-	if (it == mysql_pool_map_.end()) {
+	boost::unordered_map<std::string, Mysql_Pool*>::iterator iter = mysql_pool_map_.find(pool_name);
+	if (iter == mysql_pool_map_.end()) {
 		return NULL;
 	} else {
-		return it->second->get_mysql_conn();
+		return iter->second->get_mysql_conn();
 	}
 }
 
@@ -244,8 +244,8 @@ void Mysql_Manager::rel_mysql_conn(Mysql_Conn* conn) {
 		return;
 	}
 
-	std::map<std::string, Mysql_Pool*>::iterator it = mysql_pool_map_.find(conn->get_pool_name());
-	if (it != mysql_pool_map_.end()) {
-		it->second->rel_mysql_conn(conn);
+	boost::unordered_map<std::string, Mysql_Pool*>::iterator iter = mysql_pool_map_.find(conn->get_pool_name());
+	if (iter != mysql_pool_map_.end()) {
+		iter->second->rel_mysql_conn(conn);
 	}
 }

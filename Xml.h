@@ -1,12 +1,12 @@
 /*
  * Xml.h
  *
- *  Created on: July 15,2016
+ *  Created on: Jul 15,2016
  *      Author: zhangyalei
  */
 
-#ifndef __XML__
-#define __XML__
+#ifndef XML_H_
+#define XML_H_
 
 #include "tinyxml.h"
 #include <iostream>

@@ -1,12 +1,12 @@
 /*
- * HotUpdate.h
+ * Hot_Update.h
  *
- *  Created on: 2016年3月1日
+ *  Created on: Mar 1,2016
  *      Author: zhangyalei
  */
 
-#ifndef HOTUPDATE_H_
-#define HOTUPDATE_H_
+#ifndef HOT_UPDATE_H_
+#define HOT_UPDATE_H_
 
 #include "Thread.h"
 #include "boost/unordered_map.hpp"

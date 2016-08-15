@@ -1,13 +1,12 @@
 /*
  * Epoll_Watcher.h
- *
+  *
  *  Created on: Dec 16,2015
  *      Author: zhangyalei
- *
- *  Reactor
- *  底层使用epoll实现，主要功能为io事件回调、心跳超时机制、毫秒级定时器
- *
- */
+  *
+  *  底层使用epoll实现，主要功能为io事件回调、心跳超时机制、毫秒级定时器
+  *
+*/
 
 #ifndef EPOLL_WATCHER_H_
 #define EPOLL_WATCHER_H_

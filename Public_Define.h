@@ -1,7 +1,7 @@
 /*
  * Public_Define.h
  *
- *  Created on: 2016年8月6日
+ *  Created on: Aug 6,2016
  *      Author: zhangyalei
  */
 
@@ -9,6 +9,7 @@
 #define PUBLIC_DEFINE_H_
 
 #include <vector>
+#include "Time_Value.h"
 
 enum NetWork_Protocol {
 	NETWORK_PROTOCOL_TCP = 0,
@@ -51,6 +52,12 @@ enum Color {
 	LCYAN = 46,
 	WHITE = 47
 };
+
+struct Data_Info {
+	int file_size;
+	int data_len;
+	char* data;
+} ;
 
 struct Msg_Process_Time {
 	int msg_id;

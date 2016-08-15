@@ -1,12 +1,12 @@
 /*
  * DateTime.h
- *
- * Created on: 2016年1月12日
+  *
+ * 	Created on: Jan 12,2016
  *      Author: zhangyalei
- */
+*/
 
-#ifndef DATETIME_H_
-#define DATETIME_H_
+#ifndef DATE_TIME_H_
+#define DATE_TIME_H_
 
 #include "Time_Value.h"
 
@@ -68,4 +68,4 @@ private:
 	long wday_;
 };
 
-#endif /* DATETIME_H_ */
+#endif /* DATE_TIME_H_ */
