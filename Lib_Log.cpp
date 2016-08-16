@@ -52,42 +52,42 @@ void Lib_Log::destroy(void) {
 void Lib_Log::log_trace(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_TRACE, fmt, ap);
+	assembly_msg(LOG_TRACE, fmt, ap);
 	va_end(ap);
 }
 
 void Lib_Log::log_debug(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_DEBUG, fmt, ap);
+	assembly_msg(LOG_DEBUG, fmt, ap);
 	va_end(ap);
 }
 
 void Lib_Log::log_info(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_INFO, fmt, ap);
+	assembly_msg(LOG_INFO, fmt, ap);
 	va_end(ap);
 }
 
 void Lib_Log::log_warn(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_WARN, fmt, ap);
+	assembly_msg(LOG_WARN, fmt, ap);
 	va_end(ap);
 }
 
 void Lib_Log::log_error(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_ERROR, fmt, ap);
+	assembly_msg(LOG_ERROR, fmt, ap);
 	va_end(ap);
 }
 
 void Lib_Log::log_fatal(const char *fmt, ...) {
 	va_list	ap;
 	va_start(ap, fmt);
-	assembly_msg(LIB_LOG_FATAL, fmt, ap);
+	assembly_msg(LOG_FATAL, fmt, ap);
 	va_end(ap);
 }
 
@@ -108,7 +108,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 	msg_stream << line_buf;
 
 	switch (log_flag) {
-	case LIB_LOG_TRACE: {
+	case LOG_TRACE: {
 		set_color(STDERR_FILENO, MAGENTA);
 		int nptrs;
 		void *buffer[backtrace_size];
@@ -126,22 +126,22 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		free(strings);
 		break;
 	}
-	case LIB_LOG_DEBUG: {
+	case LOG_DEBUG: {
 		set_color(STDERR_FILENO, WHITE);
 		msg_stream << std::endl;
 		break;
 	}
-	case LIB_LOG_INFO: {
+	case LOG_INFO: {
 		set_color(STDERR_FILENO, LGREEN);
 		msg_stream << std::endl;
 		break;
 	}
-	case LIB_LOG_WARN: {
+	case LOG_WARN: {
 		set_color(STDERR_FILENO, LBLUE);
 		msg_stream << std::endl;
 		break;
 	}
-	case LIB_LOG_ERROR: {
+	case LOG_ERROR: {
 		set_color(STDERR_FILENO, LRED);
 		msg_stream << ", errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
@@ -149,7 +149,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		msg_stream << ", errstr=[" << line_buf << "]" << std::endl;
 		break;
 	}
-	case LIB_LOG_FATAL: {
+	case LOG_FATAL: {
 		set_color(STDERR_FILENO, YELLOW);
 		msg_stream << "errno = " << errno;
 		memset(line_buf, 0, sizeof(line_buf));
@@ -161,6 +161,7 @@ void Lib_Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 		}
 		else {
 			std::cerr << msg_stream.str();
+			reset_color(STDERR_FILENO);
 		}
 		abort();
 		break;

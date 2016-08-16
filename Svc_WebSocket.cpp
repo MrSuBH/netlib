@@ -11,7 +11,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/uio.h>
-#include <limits.h>
 #include <errno.h>
 #include <cstring>
 #include <sstream>
@@ -24,18 +23,16 @@
 Svc_Websocket::Svc_Websocket():
 	Svc_Handler(),
 	websocket_connected_(false)
-{
-}
+{ }
 
-Svc_Websocket::~Svc_Websocket(){
-}
+Svc_Websocket::~Svc_Websocket() {}
 
-void Svc_Websocket::reset(void){
+void Svc_Websocket::reset(void) {
 	websocket_connected_ = false;
 	Svc_Handler::reset();
 }
 
-int Svc_Websocket::handle_recv(void){
+int Svc_Websocket::handle_recv(void) {
 	if (parent_->is_closed())
 		return 0;
 	
@@ -81,11 +78,11 @@ int Svc_Websocket::handle_recv(void){
 	return 0;
 }
 
-int Svc_Websocket::handle_send(void){
+int Svc_Websocket::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;
-	Block_Buffer *front_buf = 0;
 
+	Block_Buffer *front_buf = 0;
 	while (!send_block_list_.empty()) {
 		front_buf = send_block_list_.front();
 		
@@ -258,7 +255,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 	return 0;
 }
 
-Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8_t *masking_key, Block_Buffer *buf){
+Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8_t *masking_key, Block_Buffer *buf) {
 	int cid = parent_->get_cid();
 	Block_Buffer *data_buf = parent_->pop_block(cid);
 	data_buf->reset();
@@ -273,7 +270,7 @@ Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8
 	return data_buf;
 }
 
-int Svc_Websocket::websocket_handshake(Block_Buffer *buf){
+int Svc_Websocket::websocket_handshake(Block_Buffer *buf) {
 	std::map<std::string, std::string> header_map;
 	char buff[4096] = {};
 	size_t size = buf->readable_bytes();
@@ -342,7 +339,7 @@ int Svc_Websocket::websocket_handshake(Block_Buffer *buf){
 	return 0;
 }
 
-Block_Buffer *Svc_Websocket::make_websocket_frame(Block_Buffer *buf, uint8_t *op){
+Block_Buffer *Svc_Websocket::make_websocket_frame(Block_Buffer *buf, uint8_t *op) {
 	uint8_t first_byte, second_byte;
 	uint8_t fin = 0; 
 	uint8_t opcode = 0;

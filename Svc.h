@@ -10,10 +10,8 @@
 
 #include "Event_Handler.h"
 #include "Block_List.h"
-#include "Thread_Mutex.h"
 #include "Public_Define.h"
 
-class Block_Buffer;
 class Server;
 class Connector;
 class Svc;
@@ -30,9 +28,11 @@ public:
 	virtual ~Svc_Handler(void);
 
 	void reset(void);
-	void set_max_list_size(size_t max_size);
-	void set_max_pack_size(size_t max_size);
-	void set_parent(Svc *parent);
+
+	void set_parent(Svc *parent) { parent_ = parent; }
+	void set_max_list_size(size_t max_list_size) { max_list_size_ = max_list_size; }
+	void set_max_pack_size(size_t max_pack_size) { max_pack_size_ = max_pack_size; }
+
 	int push_recv_block(Block_Buffer *buf);
 	int push_send_block(Block_Buffer *buf);
 
@@ -107,7 +107,7 @@ public:
 	std::string get_peer_ip();
 	int get_peer_port();
 
-	void create_handler(NetWork_Protocol type);
+	void create_handler(NetWork_Protocol protocol_type);
 
 protected:
 	Server *server_;
@@ -121,7 +121,6 @@ private:
 	std::string peer_ip_;
 	int peer_port_;
 
-	NetWork_Protocol network_procotol_type_;
 	Svc_Handler *handler_;
 };
 
@@ -134,7 +133,6 @@ inline void Svc::reset(void) {
 	peer_ip_.clear();
 	peer_port_ = 0;
 
-	network_procotol_type_ = NETWORK_PROTOCOL_TCP;
 	if (handler_) {
 		handler_->reset();
 		delete handler_;

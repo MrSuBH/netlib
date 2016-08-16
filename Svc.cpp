@@ -11,18 +11,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/uio.h>
-#include <limits.h>
 #include <errno.h>
 #include <cstring>
 #include <sstream>
 #include <string.h>
-#include "Svc.h"
-#include "Block_Buffer.h"
-#include "Lib_Log.h"
 #include "Server.h"
 #include "Connector.h"
+#include "Svc.h"
 #include "Svc_Tcp.h"
 #include "Svc_WebSocket.h"
+#include "Svc_Http.h"
 
 Svc_Handler::Svc_Handler():
 	parent_(0),
@@ -31,11 +29,11 @@ Svc_Handler::Svc_Handler():
 {
 }
 
-Svc_Handler::~Svc_Handler(){
+Svc_Handler::~Svc_Handler() {
 	parent_ = NULL;
 }
 
-void Svc_Handler::reset(void){
+void Svc_Handler::reset(void) {
 	Data_Block_List::BList blist;
 	int cid = parent_->get_cid();
 
@@ -56,29 +54,16 @@ void Svc_Handler::reset(void){
 	parent_ = 0;
 }
 
-void Svc_Handler::set_max_list_size(size_t max_size){
-	max_list_size_ = max_size;
-}
-
-void Svc_Handler::set_max_pack_size(size_t max_size){
-	max_pack_size_ = max_size;
-}
-
-void Svc_Handler::set_parent(Svc *parent){
-	parent_ = parent;
-}
-
-int Svc_Handler::push_recv_block(Block_Buffer *buf){
+int Svc_Handler::push_recv_block(Block_Buffer *buf) {
 	if (recv_block_list_.size() >= max_list_size_) {
 		LIB_LOG_ERROR("recv_block_list_ has full.");
 		return -1;
 	}
 	recv_block_list_.push_back(buf);
 	return 0;
-
 }
 
-int Svc_Handler::push_send_block(Block_Buffer *buf){
+int Svc_Handler::push_send_block(Block_Buffer *buf) {
 	if (send_block_list_.size() >= max_list_size_) {
 		LIB_LOG_ERROR("send_block_list_ full cid = %d, send_block_list_.size() = %d, max_list_size_ = %d", parent_->get_cid(), send_block_list_.size(), max_list_size_);
 		parent_->handle_close();
@@ -96,7 +81,6 @@ Svc::Svc(void):
 	is_reg_recv_(false),
 	is_reg_send_(false),
 	peer_port_(0),
-	network_procotol_type_(NETWORK_PROTOCOL_TCP),
 	handler_(0)
 { }
 
@@ -219,16 +203,18 @@ int Svc::pack_data(Block_Vector &block_vec){
 	return handler_->handle_pack(block_vec);
 }
 
-void Svc::create_handler(NetWork_Protocol network_protocol_type) {
-	network_procotol_type_ = network_protocol_type;
-	switch(network_protocol_type){
-		case NETWORK_PROTOCOL_TCP:
+void Svc::create_handler(NetWork_Protocol protocol_type) {
+	switch(protocol_type){
+		case TCP:
 			handler_ = new Svc_Tcp;
 			break;
-		case NETWORK_PROTOCOL_UDP:
+		case UDP:
 			break;
-		case NETWORK_PROTOCOL_WEBSOCKET:
+		case WEBSOCKET:
 			handler_ = new Svc_Websocket;
+			break;
+		case HTTP:
+			handler_ = new Svc_Http;
 			break;
 		default:
 			break;

@@ -148,7 +148,7 @@ int Server_Svc::close_handler(int cid) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Server::Server(void): network_protocol_type_(NETWORK_PROTOCOL_TCP) { }
+Server::Server(void): network_protocol_type_(TCP) { }
 
 Server::~Server(void) { }
 
@@ -160,12 +160,12 @@ void Server::process_list(void) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 }
 
-void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int network_protocol_type) {
+void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int protocol_type) {
 	accept_.set(this, port);
 	receive_.set(this, 0, &recv_timeout);
 	send_.set(this, 0, send_interval);
 	pack_.set(this, 0);
-	network_protocol_type_ = (NetWork_Protocol)network_protocol_type;
+	network_protocol_type_ = (NetWork_Protocol)protocol_type;
 }
 
 int Server::init(void) {

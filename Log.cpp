@@ -160,6 +160,7 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 			logging_file(msg_stream);
 		} else {
 			std::cerr << msg_stream.str();
+			reset_color(STDERR_FILENO);
 		}
 		abort();
 		break;

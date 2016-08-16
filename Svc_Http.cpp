@@ -1,7 +1,7 @@
 /*
- * Svc_Tcp.cpp
+ * Svc_Http.cpp
  *
- *  Created on: Apr 19,2016
+ *  Created on: Aug 16,2016
  *      Author: zhangyalei
  */
 
@@ -15,20 +15,21 @@
 #include <cstring>
 #include <sstream>
 #include <string.h>
-#include "Svc_Tcp.h"
+#include "Svc_Http.h"
+#include "Http_Parser_Wrap.h"
 
-Svc_Tcp::Svc_Tcp(): Svc_Handler() { }
+Svc_Http::Svc_Http(): Svc_Handler() {}
 
-Svc_Tcp::~Svc_Tcp() { }
+Svc_Http::~Svc_Http() {}
 
-int Svc_Tcp::handle_recv(void) {
+int Svc_Http::handle_recv(void) {
 	if (parent_->is_closed())
 		return 0;
-	
+
 	int cid = parent_->get_cid();
 	Block_Buffer *buf = parent_->pop_block(cid);
 	if (! buf) {
-		LIB_LOG_ERROR("tcp pop_block fail, cid:%d", cid);
+		LIB_LOG_ERROR("http pop_block fail, cid:%d", cid);
 		return -1;
 	}
 	buf->reset();
@@ -67,7 +68,7 @@ int Svc_Tcp::handle_recv(void) {
 	return 0;
 }
 
-int Svc_Tcp::handle_send(void) {
+int Svc_Http::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;
 
@@ -77,7 +78,7 @@ int Svc_Tcp::handle_send(void) {
 		std::vector<Block_Buffer *> iov_buff;
 		iov_vec.clear();
 		iov_buff.clear();
-		
+
 		int cid = parent_->get_cid();
 		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
 			LIB_LOG_ERROR("construct_iov return 0");
@@ -124,12 +125,9 @@ int Svc_Tcp::handle_send(void) {
 	return 0;
 }
 
-int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
-	size_t rd_idx_orig = 0;
+int Svc_Http::handle_pack(Block_Vector &block_vec) {
 	int32_t cid = 0;
-	uint16_t len = 0;
 	Block_Buffer *front_buf = 0;
-	Block_Buffer *free_buf = 0;
 
 	while (! recv_block_list_.empty()) {
 		front_buf = recv_block_list_.front();
@@ -138,7 +136,6 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			continue;
 		}
 
-		rd_idx_orig = front_buf->get_read_idx();
 		cid = front_buf->read_int32();
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
@@ -149,64 +146,15 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			return -1;
 		}
 
-		if (front_buf->readable_bytes() < sizeof(len)) { /// 2字节的包长度标识都不够
-			front_buf->set_read_idx(rd_idx_orig);
-			if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
-				return 0;
-			} else {
-				parent_->push_block(parent_->get_cid(), free_buf);
-				continue;
-			}
-		}
+		Http_Parser_Wrap http_parser;
+		http_parser.parse_http_content(front_buf->get_read_ptr(), front_buf->readable_bytes());
 
-		len = front_buf->peek_uint16();
-		size_t data_len = front_buf->readable_bytes() - sizeof(len);
-		if (len == 0 || len > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LIB_LOG_ERROR("cid:%d fd:%d data block len = %u", cid, parent_->get_fd(), len);
-			front_buf->log_binary_data(512);
-			recv_block_list_.pop_front();
-			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
-			parent_->handle_close();
-			return -1;
-		}
-
-		if (data_len == (size_t)len) {
-			front_buf->set_read_idx(rd_idx_orig);
-			recv_block_list_.pop_front();
-			block_vec.push_back(front_buf);
-			continue;
-		} else {
-			if (data_len < (size_t)len) {		//半包，需要合并前两个包
-				front_buf->set_read_idx(rd_idx_orig);
-				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
-					return 0;
-				} else {
-					parent_->push_block(parent_->get_cid(), free_buf);
-					continue;
-				}
-			}
-
-			if (data_len > len) {				//粘包，需要拆分包
-				int cid = parent_->get_cid();
-				size_t wr_idx_orig = front_buf->get_write_idx();
-
-				Block_Buffer *data_buf = parent_->pop_block(cid);
-				data_buf->reset();
-				data_buf->write_int32(cid);
-				data_buf->copy(front_buf->get_read_ptr(), sizeof(len) + len);
-
-				block_vec.push_back(data_buf);
-
-				size_t cid_idx = front_buf->get_read_idx() + sizeof(len) + len - sizeof(int32_t);
-				front_buf->set_read_idx(cid_idx);
-				front_buf->set_write_idx(cid_idx);
-				front_buf->write_int32(cid);
-				front_buf->set_write_idx(wr_idx_orig);
-
-				continue;
-			}
-		}
+		Block_Buffer *data_buf = parent_->pop_block(cid);
+		data_buf->reset();
+		data_buf->write_int32(cid);
+		data_buf->write_string(http_parser.get_body_content());
+		block_vec.push_back(data_buf);
+		recv_block_list_.pop_front();
 	}
 
 	return 0;

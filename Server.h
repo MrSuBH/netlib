@@ -100,7 +100,7 @@ public:
 	void run_handler(void);
 	virtual void process_list(void);
 
-	void set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int network_protocol_type = 0);
+	void set(int port, Time_Value &recv_timeout, Time_Value &send_interval, int protocol_type = 0);
 	int init(void);
 	int start(void);
 

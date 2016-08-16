@@ -92,8 +92,9 @@ int Send::append_send_block(void) {
 	while ((buf = append_list_.pop_front()) != 0) {
 		cid = buf->read_int32();
 		if ((svc = find_svc(cid)) != 0) {
-			if ((svc->push_send_block(buf)) != 0)
+			if ((svc->push_send_block(buf)) != 0) {
 				push_block(cid, buf);
+			}
 		} else {
 			push_block(cid, buf);
 		}
