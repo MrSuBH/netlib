@@ -9,7 +9,11 @@
 #define SVC_HTTP_H_
 
 #include "Svc.h"
-#include "Object_Pool.h"
+
+#define HTTP_RESPONSE_HTML          "HTTP/1.1 200 OK\r\n"\
+                                    "Connection:close\r\n"\
+                                    "Content-Length:%d\r\n"\
+                                    "Content-Type:text/html;charset=utf-8\r\n\r\n%s"
 
 class Svc_Http : public Svc_Handler {
 public:
@@ -19,6 +23,9 @@ public:
 	virtual int handle_recv(void);
 	virtual int handle_send(void);
 	virtual int handle_pack(Block_Vector &block_vec);
+
+private:
+	void make_http_head(Block_Buffer *buf);
 };
 
 #endif /* SVC_HTTP_H_ */

@@ -16,9 +16,9 @@
 #include <sstream>
 #include <string.h>
 #include "Base64.h"
-#include "Svc.h"
 #include "Svc_WebSocket.h"
 #include "Sha1.h"
+#include "boost/unordered_map.hpp"
 
 Svc_Websocket::Svc_Websocket():
 	Svc_Handler(),
@@ -47,7 +47,8 @@ int Svc_Websocket::handle_recv(void) {
 
 	int n = 0;
 	while (1) {
-		buf->ensure_writable_bytes(2000); /// every read system call try to read 2k data
+		//每次读2k长度数据
+		buf->ensure_writable_bytes(2000);
 		n = 0;
 		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
 			if (errno == EINTR)
@@ -82,33 +83,33 @@ int Svc_Websocket::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;
 
+	int cid = parent_->get_cid();
 	Block_Buffer *front_buf = 0;
 	while (!send_block_list_.empty()) {
 		front_buf = send_block_list_.front();
 		
+		//构建websocket数据帧头
 		Block_Buffer *data_buf = make_websocket_frame(front_buf);
 		size_t sum_bytes = data_buf->readable_bytes();
-		
-		int cid = parent_->get_cid();
 		int ret = ::write(parent_->get_fd(), data_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
 			LIB_LOG_ERROR("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			parent_->push_block(cid, data_buf);
-			if (errno == EINTR) { /// 被打断, 重写
+			if (errno == EINTR) { //被打断, 重写
 				continue;
-			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
+			} else if (errno == EWOULDBLOCK) { //EAGAIN,下一次超时再写
 				return ret;
-			} else { /// 其他错误，丢掉该客户端全部数据
+			} else { //其他错误，丢掉该客户端全部数据
 				parent_->handle_close();
 				return ret;
 			}
 		} else {
-			if ((size_t)ret == sum_bytes) { /// 本次全部写完, 尝试继续写
+			if ((size_t)ret == sum_bytes) { //本次全部写完, 尝试继续写
 				parent_->push_block(cid, front_buf);
 				parent_->push_block(cid, data_buf);
 				send_block_list_.pop_front();
 				continue;
-			} else { /// 未写完, 丢掉已发送的数据, 下一次超时再写
+			} else { //未写完, 丢掉已发送的数据, 下一次超时再写,front_buf没有发送成功，留到下一次继续发送
 				parent_->push_block(cid, data_buf);
 				return ret;
 			}
@@ -271,7 +272,7 @@ Block_Buffer *Svc_Websocket::get_websocket_payload(int16_t payload_length, uint8
 }
 
 int Svc_Websocket::websocket_handshake(Block_Buffer *buf) {
-	std::map<std::string, std::string> header_map;
+	boost::unordered_map<std::string, std::string> header_map;
 	char buff[4096] = {};
 	size_t size = buf->readable_bytes();
 	memcpy(buff, buf->get_read_ptr(), size);

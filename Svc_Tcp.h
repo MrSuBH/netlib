@@ -9,7 +9,6 @@
 #define SVC_TCP_H_
 
 #include "Svc.h"
-#include "Object_Pool.h"
 
 class Svc_Tcp : public Svc_Handler {
 public:

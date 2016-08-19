@@ -32,28 +32,29 @@ int Svc_Tcp::handle_recv(void) {
 		return -1;
 	}
 	buf->reset();
-	buf->write_int32(cid);
+	buf->write_int32(cid);			//写入客户端连接的cid
 
 	int n = 0;
 	while (1) {
-		buf->ensure_writable_bytes(2000); /// every read system call try to read 2k data
+		//每次读2k长度数据
+		buf->ensure_writable_bytes(2000);
 		n = 0;
 		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
-			if (errno == EINTR)
+			if (errno == EINTR)	//被打断,重新继续读
 				continue;
-			if (errno == EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)	//EAGAIN,下一次超时再读
 				break;
 
 			LIB_LOG_ERROR("tcp read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
 			return 0;
-		} else if (n == 0) { /// EOF
+		} else if (n == 0) { //读数据遇到eof结束符，关闭连接
 			LIB_LOG_ERROR("tcp read eof close cid:%d fd=%d", cid, parent_->get_fd());
 			parent_->push_block(cid, buf);
 			parent_->handle_close();
 			return 0;
-		} else {
+		} else {		//读取成功
 			buf->set_write_idx(buf->get_write_idx() + n);
 		}
 	}
@@ -71,6 +72,7 @@ int Svc_Tcp::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;
 
+	int cid = parent_->get_cid();
 	while (!send_block_list_.empty()) {
 		size_t sum_bytes = 0;
 		std::vector<iovec> iov_vec;
@@ -78,7 +80,7 @@ int Svc_Tcp::handle_send(void) {
 		iov_vec.clear();
 		iov_buff.clear();
 		
-		int cid = parent_->get_cid();
+		//将所有需要发生的数据构造成iov_vec，进行聚集写
 		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
 			LIB_LOG_ERROR("construct_iov return 0");
 			return 0;
@@ -87,24 +89,25 @@ int Svc_Tcp::handle_send(void) {
 		int ret = ::writev(parent_->get_fd(), &*iov_vec.begin(), iov_vec.size());
 		if (ret == -1) {
 			LIB_LOG_ERROR("writev cid:%d fd:%d ip:%s port:%d errno:%d", cid, parent_->get_fd(), parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
-			if (errno == EINTR) { /// 被打断, 重写
+			if (errno == EINTR) { //被打断, 重写
 				continue;
-			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
+			} else if (errno == EWOULDBLOCK) { //EAGAIN,下一次超时再写
 				return ret;
-			} else { /// 其他错误，丢掉该客户端全部数据
+			} else { //其他错误，丢掉该客户端全部数据
 				parent_->handle_close();
 				return ret;
 			}
 		} else {
-			if ((size_t)ret == sum_bytes) { /// 本次全部写完, 尝试继续写
+			if ((size_t)ret == sum_bytes) { //本次全部写完, 尝试继续写
 				for (std::vector<Block_Buffer *>::iterator it = iov_buff.begin(); it != iov_buff.end(); ++it) {
 					parent_->push_block(cid, *it);
 				}
 				send_block_list_.pop_front(iov_buff.size());
 				continue;
-			} else { /// 未写完, 丢掉已发送的数据, 下一次超时再写
+			} else { //本次未写完, 丢掉已发送的数据, 剩余数据下一次超时再写
 				size_t writed_bytes = ret, remove_count = 0;
 				Block_Buffer *buf = 0;
+				//计算已经发生需要丢弃的数据
 				for (std::vector<Block_Buffer *>::iterator it = iov_buff.begin(); it != iov_buff.end(); ++it) {
 					buf = *it;
 					if (writed_bytes >= buf->readable_bytes()) {

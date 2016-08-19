@@ -37,7 +37,8 @@ int Svc_Http::handle_recv(void) {
 
 	int n = 0;
 	while (1) {
-		buf->ensure_writable_bytes(2000); /// every read system call try to read 2k data
+		//每次读2k长度数据
+		buf->ensure_writable_bytes(2000);
 		n = 0;
 		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
 			if (errno == EINTR)
@@ -72,51 +73,31 @@ int Svc_Http::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;
 
+	int cid = parent_->get_cid();
+	Block_Buffer *front_buf = 0;
 	while (!send_block_list_.empty()) {
-		size_t sum_bytes = 0;
-		std::vector<iovec> iov_vec;
-		std::vector<Block_Buffer *> iov_buff;
-		iov_vec.clear();
-		iov_buff.clear();
+		front_buf = send_block_list_.front();
 
-		int cid = parent_->get_cid();
-		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
-			LIB_LOG_ERROR("construct_iov return 0");
-			return 0;
-		}
-
-		int ret = ::writev(parent_->get_fd(), &*iov_vec.begin(), iov_vec.size());
+		//构建http消息头
+		make_http_head(front_buf);
+		size_t sum_bytes = front_buf->readable_bytes();
+		int ret = ::write(parent_->get_fd(), front_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
-			LIB_LOG_ERROR("writev cid:%d fd:%d ip:%s port:%d errno:%d", cid, parent_->get_fd(), parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
-			if (errno == EINTR) { /// 被打断, 重写
+			LIB_LOG_ERROR("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
+			if (errno == EINTR) { //被打断, 重写
 				continue;
-			} else if (errno == EWOULDBLOCK) { /// EAGAIN,下一次超时再写
+			} else if (errno == EWOULDBLOCK) { //EAGAIN,下一次超时再写
 				return ret;
-			} else { /// 其他错误，丢掉该客户端全部数据
+			} else { //其他错误，丢掉该客户端全部数据
 				parent_->handle_close();
 				return ret;
 			}
 		} else {
-			if ((size_t)ret == sum_bytes) { /// 本次全部写完, 尝试继续写
-				for (std::vector<Block_Buffer *>::iterator it = iov_buff.begin(); it != iov_buff.end(); ++it) {
-					parent_->push_block(cid, *it);
-				}
-				send_block_list_.pop_front(iov_buff.size());
+			if ((size_t)ret == sum_bytes) { //本次全部写完, 尝试继续写
+				parent_->push_block(cid, front_buf);
+				send_block_list_.pop_front();
 				continue;
-			} else { /// 未写完, 丢掉已发送的数据, 下一次超时再写
-				size_t writed_bytes = ret, remove_count = 0;
-				Block_Buffer *buf = 0;
-				for (std::vector<Block_Buffer *>::iterator it = iov_buff.begin(); it != iov_buff.end(); ++it) {
-					buf = *it;
-					if (writed_bytes >= buf->readable_bytes()) {
-						++remove_count;
-						writed_bytes -= buf->readable_bytes();
-						parent_->push_block(cid, buf);
-					} else {
-						break;
-					}
-				}
-				send_block_list_.pop_front(remove_count, writed_bytes);
+			} else { //未写完, 丢掉已发送的数据, 下一次超时再写,front_buf没有发送成功，留到下一次继续发送
 				return ret;
 			}
 		}
@@ -158,4 +139,13 @@ int Svc_Http::handle_pack(Block_Vector &block_vec) {
 	}
 
 	return 0;
+}
+
+void Svc_Http::make_http_head(Block_Buffer *buf) {
+	std::string str_content = buf->read_string();
+	int content_len = str_content.length();
+  char str_http[1024];
+  snprintf(str_http, 1024, HTTP_RESPONSE_HTML, content_len, str_content.c_str());
+	buf->write_string(str_http);
+	LIB_LOG_INFO("http msg:%s%s", "\r\n", str_http);
 }

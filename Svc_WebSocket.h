@@ -8,25 +8,9 @@
 #ifndef SVC_WEBSOCKET_H_
 #define SVC_WEBSOCKET_H_
 
-#include "Block_Buffer.h"
 #include "Svc.h"
-#include "Object_Pool.h"
 
 #define MAGIC_KEY "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-
-enum WEBSOCKET_FRAME_CODE{
-	FRAME_NORMAL = 0x0,
-	FRAME_FINAL = 0x1,
-};
-
-enum WEBSOCKET_OPCODE_CODE{
-	OPCODE_CONTINUATION = 0x0,
-	OPCODE_TEXT = 0x1,
-	OPCODE_BINARY = 0x2,
-	OPCODE_CLOSE = 0x8,
-	OPCODE_PING = 0x9,
-	OPCODE_PONG = 0xa,
-};
 
 class Svc_Websocket : public Svc_Handler {
 public:
