@@ -11,6 +11,9 @@
 #include <vector>
 #include "Time_Value.h"
 
+const static int SVC_MAX_LIST_SIZE = 1000;
+const static int SVC_MAX_PACK_SIZE = 60 * 1024;
+
 enum NetWork_Protocol {
 	TCP = 0,
 	UDP = 1,

@@ -14,7 +14,6 @@
 #include "Send.h"
 #include "Svc.h"
 #include "Svc_Static_List.h"
-#include "Thread_Mutex.h"
 #include "Object_Pool.h"
 #include "Block_Pool_Group.h"
 
@@ -90,9 +89,6 @@ public:
 	typedef Svc_Static_List<Server_Svc *, Spin_Lock> Svc_List;
 	typedef Block_List<Thread_Mutex> Data_List;
 	typedef List<int, Thread_Mutex> Int_List;
-
-	static const int svc_max_list_size = 400; /// 200个包
-	static const int svc_max_pack_size = 10 * 1024; /// 接收单个包最大32k
 
 	Server(void);
 	virtual ~Server(void);

@@ -11,7 +11,6 @@
 #include "Time_Value.h"
 
 class Epoll_Watcher;
-
 class Event_Handler {
 public:
 	class greater {

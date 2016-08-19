@@ -5,16 +5,8 @@
  *      Author: zhangyalei
  */
 
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/uio.h>
 #include <errno.h>
-#include <cstring>
-#include <sstream>
-#include <string.h>
 #include "Svc_Tcp.h"
 
 Svc_Tcp::Svc_Tcp(): Svc_Handler() { }

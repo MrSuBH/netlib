@@ -480,6 +480,8 @@ parse_url_char(enum state s, const char ch)
         return s_dead;
       }
 
+      break;
+
     /* FALLTHROUGH */
     case s_req_server_start:
     case s_req_server:

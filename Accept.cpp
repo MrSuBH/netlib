@@ -11,13 +11,9 @@
 #include <netinet/tcp.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <arpa/inet.h>
-#include <cstring>
-#include <cstdlib>
 #include "Accept.h"
 #include "Common_Func.h"
-#include "Lib_Log.h"
 #include "Server.h"
 
 Accept::Accept(void):

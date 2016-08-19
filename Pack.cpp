@@ -5,7 +5,6 @@
  *      Author: zhangyalei
  */
 
-#include <iostream>
 #include "Pack.h"
 #include "Server.h"
 #include "Connector.h"

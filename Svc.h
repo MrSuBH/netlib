@@ -20,18 +20,13 @@ class Svc_Handler {
 public:
 	typedef Block_List<Thread_Mutex> Data_Block_List;
 	typedef std::vector<Block_Buffer *> Block_Vector;
-	
-	const static int MAX_LIST_SIZE = 1000;
-	const static int MAX_PACK_SIZE = 60 * 1024;
-	
+
 	Svc_Handler(void);
 	virtual ~Svc_Handler(void);
 
 	void reset(void);
 
 	void set_parent(Svc *parent) { parent_ = parent; }
-	void set_max_list_size(size_t max_list_size) { max_list_size_ = max_list_size; }
-	void set_max_pack_size(size_t max_pack_size) { max_pack_size_ = max_pack_size; }
 
 	int push_recv_block(Block_Buffer *buf);
 	int push_send_block(Block_Buffer *buf);
@@ -97,9 +92,6 @@ public:
 	void set_peer_addr(void);
 	int get_peer_addr(std::string &ip, int &port);
 	int get_local_addr(std::string &ip, int &port);
-
-	void set_max_list_size(size_t max_size);
-	void set_max_pack_size(size_t max_size);
 
 	void set_server(Server *server);
 	void set_connector(Connector *connector);
@@ -185,14 +177,6 @@ inline bool Svc::is_closed(void) {
 
 inline void Svc::set_closed(bool v) {
 	is_closed_ = v;
-}
-
-inline void Svc::set_max_list_size(size_t max_size) {
-	handler_->set_max_list_size(max_size);
-}
-
-inline void Svc::set_max_pack_size(size_t max_size) {
-	handler_->set_max_pack_size(max_size);
 }
 
 inline void Svc::set_peer_addr(void) {

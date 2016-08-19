@@ -8,7 +8,6 @@
 #include <dirent.h>
 #include <openssl/md5.h>
 #include <fstream>
-#include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>

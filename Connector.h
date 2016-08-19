@@ -14,7 +14,6 @@
 #include "Send.h"
 #include "Svc.h"
 #include "Svc_Static_List.h"
-#include "Thread_Mutex.h"
 #include "Object_Pool.h"
 #include "Block_Pool_Group.h"
 
@@ -89,9 +88,6 @@ public:
 	typedef Object_Pool<Connector_Svc, Spin_Lock> Client_Svc_Pool;
 	typedef Svc_Static_List<Connector_Svc *, Spin_Lock> Svc_List;
 	typedef Block_List<Thread_Mutex> Data_List;
-
-	static const int svc_max_list_size = 20000; /// 20000个包
-	static const int svc_max_pack_size = 60 * 1024; /// 接收单个包最大60K
 
 	Connector(void);
 	virtual ~Connector(void);

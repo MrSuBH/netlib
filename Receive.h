@@ -11,9 +11,7 @@
 #include "Thread.h"
 #include "Svc.h"
 #include "Epoll_Watcher.h"
-#include "Time_Value.h"
 #include "List.h"
-#include "Lib_Log.h"
 
 class Receive;
 class Server;

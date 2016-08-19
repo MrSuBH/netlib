@@ -8,7 +8,6 @@
 #ifndef PRIORITY_QUEUE_H_
 #define PRIORITY_QUEUE_H_
 
-#include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
 
 //优先队列

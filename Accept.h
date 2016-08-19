@@ -11,7 +11,6 @@
 #include "Thread.h"
 
 class Server;
-
 class Accept: public Thread {
 public:
 	Accept(void);

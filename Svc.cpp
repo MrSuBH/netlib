@@ -5,33 +5,20 @@
  *      Author: zhangyalei
  */
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/uio.h>
-#include <errno.h>
-#include <cstring>
-#include <sstream>
-#include <string.h>
 #include "Server.h"
 #include "Connector.h"
-#include "Svc.h"
 #include "Svc_Tcp.h"
 #include "Svc_WebSocket.h"
 #include "Svc_Http.h"
 
 Svc_Handler::Svc_Handler():
-	parent_(0),
-	max_list_size_(MAX_LIST_SIZE),
-	max_pack_size_(MAX_PACK_SIZE)
-{
-}
+	parent_(NULL),
+	max_list_size_(SVC_MAX_LIST_SIZE),
+	max_pack_size_(SVC_MAX_PACK_SIZE)
+{ }
 
-Svc_Handler::~Svc_Handler() {
-	parent_ = NULL;
-}
+Svc_Handler::~Svc_Handler() { }
 
 void Svc_Handler::reset(void) {
 	Data_Block_List::BList blist;
@@ -49,9 +36,9 @@ void Svc_Handler::reset(void) {
 		parent_->push_block(cid, *it);
 	}
 
-	max_list_size_ = MAX_LIST_SIZE;
-	max_pack_size_ = MAX_PACK_SIZE;
 	parent_ = 0;
+	max_list_size_ = SVC_MAX_LIST_SIZE;
+	max_pack_size_ = SVC_MAX_PACK_SIZE;
 }
 
 int Svc_Handler::push_recv_block(Block_Buffer *buf) {

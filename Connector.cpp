@@ -6,7 +6,6 @@
  */
 
 #include "Connector.h"
-#include "Public_Define.h"
 
 int Connector_Connect::connect_svc(int connfd) {
 	LIB_LOG_DEBUG("connfd=%d", connfd);
@@ -26,8 +25,6 @@ int Connector_Connect::connect_svc(int connfd) {
 
 	svc->reset();
 	svc->create_handler(TCP);
-	svc->set_max_list_size(Connector::svc_max_list_size);
-	svc->set_max_pack_size(Connector::svc_max_pack_size);
 	svc->set_cid(cid);
 	svc->set_fd(connfd);
 	svc->set_peer_addr();

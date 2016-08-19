@@ -9,7 +9,7 @@
 #define XML_H_
 
 #include "tinyxml.h"
-#include <iostream>
+#include <string>
 
 #define XML_LOOP_BEGIN(NODE)\
 	do { \

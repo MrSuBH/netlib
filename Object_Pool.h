@@ -10,10 +10,10 @@
 
 #include <list>
 #include <algorithm>
+#include "boost/unordered_set.hpp"
 #include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
 #include "Lib_Log.h"
-#include "boost/unordered_set.hpp"
 
 template <typename Obj, typename LOCK = Spin_Lock>
 class Object_Pool {

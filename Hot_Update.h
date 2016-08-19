@@ -8,10 +8,10 @@
 #ifndef HOT_UPDATE_H_
 #define HOT_UPDATE_H_
 
-#include "Thread.h"
-#include "boost/unordered_map.hpp"
 #include <vector>
 #include <set>
+#include "Thread.h"
+#include "boost/unordered_map.hpp"
 
 class Hot_Update: public Thread {
 public:

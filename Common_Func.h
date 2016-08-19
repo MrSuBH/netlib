@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdint.h>
 #include "Time_Value.h"
-#include "json/json.h"
 #include "Date_Time.h"
 #include "Lib_Log.h"
 
@@ -111,44 +110,8 @@ inline int min(int first, int second) { return first <= second ? first : second;
 inline bool is_double_zero(double value) { return value >= -0.0000001 && value <= 0.0000001; }
 inline bool is_double_gt_zero(double value) { return value > 0.0000001; }
 inline bool is_double_lt_zero(double value) { return value < -0.0000001; }
-
 //除法
 inline int division(int dividend, int divisor) { return !divisor ? 0 : dividend/divisor; }
 inline double division(double dividend, double divisor) { return is_double_zero(divisor) ? 0.0 : dividend/divisor; }
-
-// 四舍五入
-double get_big_throw_small(double value);
-
-//检查数组中是否存在某个值
-bool in_json_array(const int search, const Json::Value &json_array);
-bool is_in_vector(int number, std::vector<int> &vector);
-
-/*
- * 按权重值取随机值 wight = [权值1,权值2,权值3,权值n] 权值>=0
- * 成功返回wight下标,失败返回-1
- */
-int get_rand_index(const std::vector<int> &wight);
-
-/*
- * 按权重值取随机值 wight = [权值1,权值2,权值3,权值n] 权值>=0
- * 成功返回wight下标,失败返回-1
- */
-int get_rand_index(const Json::Value &wight);
-
-/*
- * 轮盘式掉落
- */
-int get_loop_index(const Json::Value &wight);
-long get_next_tick_time(const Json::Value &date);
-
-/*
-	"battle_time" : {
-		"start_week" : [0, 1, 2, 3, 4, 5, 6],
-		"start_time" : [9, 0],
-		"end_time" : [9, 30]
-	},
-*/
-int get_next_tick_time(const Json::Value &week, const Json::Value &time);
-int get_next_tick_time(const Json::Value &week, const Json::Value &time, Time_Value &next_time);
 
 #endif /* COMM_FUNC_H_ */

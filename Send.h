@@ -10,10 +10,8 @@
 
 #include "Thread.h"
 #include "Epoll_Watcher.h"
-#include "Event_Handler.h"
 #include "List.h"
 #include "Block_List.h"
-#include "boost/unordered_map.hpp"
 
 class Svc;
 class Server;

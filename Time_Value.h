@@ -14,7 +14,6 @@
 #include <cstdlib>
 
 class Block_Buffer;
-
 class Time_Value {
 public:
 	suseconds_t const static ONE_SECOND_IN_USECS = 1000000;

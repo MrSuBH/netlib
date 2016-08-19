@@ -16,11 +16,9 @@
 #include "Event_Handler.h"
 #include "Object_Pool.h"
 #include "Thread_Mutex.h"
-#include "Mutex_Guard.h"
 #include "boost/unordered_map.hpp" /// notice: 如果用std::unordered_map, 需添加-std=c++0x参数 -D__GXX_EXPERIMENTAL_CXX0X__
 
 class Time_Value;
-
 class Epoll_Watcher : public Event_Handler {
 	/// Timer
 	typedef std::priority_queue<Event_Handler *, std::vector<Event_Handler *>, Event_Handler::greater> Timer_Queue;

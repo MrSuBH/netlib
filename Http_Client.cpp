@@ -6,7 +6,6 @@
  */
 
 #include <string.h>
-#include "json/json.h"
 #include "Http_Client.h"
 #include "Lib_Log.h"
 
@@ -123,26 +122,7 @@ std::string Http_Client::upload_byte_file(const std::string &str_url, void* pDat
 		LIB_LOG_ERROR("curl_easy_perform failed, res=%d", res);
 		return "";
 	}
-
-	// upload 返回的json格式不一样，要特殊处理
-	Json::Reader reader;
-	Json::Value value;
-
-	if (!reader.parse(strResp, value)) {
-		LIB_LOG_ERROR("json parse failed: %s", strResp.c_str());
-		return "";
-	}
-
-	if (value["error_code"].isNull()) {
-		LIB_LOG_ERROR("no code in response %s", strResp.c_str());
-		return "";
-	}
-	int32_t nRet = value["error_code"].asUInt();
-	if(nRet != 0) {
-		LIB_LOG_ERROR("upload faile:%u", nRet);
-		return "";
-	}
-	return value["url"].asString();
+	return str_url;
 }
 
 bool Http_Client::download_byte_file(const std::string &str_url, Data_Info* data_info) {

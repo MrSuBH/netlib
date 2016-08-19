@@ -5,19 +5,12 @@
  *      Author: zhangyalei
  */
 
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/uio.h>
 #include <errno.h>
-#include <cstring>
-#include <sstream>
-#include <string.h>
+#include "Sha1.h"
 #include "Base64.h"
 #include "Svc_WebSocket.h"
-#include "Sha1.h"
 #include "boost/unordered_map.hpp"
 
 Svc_Websocket::Svc_Websocket():

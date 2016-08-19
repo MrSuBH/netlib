@@ -10,7 +10,6 @@
 #define SVC_STATIC_LIST_H_
 
 #include <vector>
-#include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
 #include "Time_Value.h"
 #include "Lib_Log.h"

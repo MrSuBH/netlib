@@ -6,7 +6,6 @@
  */
 
 #include "Svc.h"
-#include "Lib_Log.h"
 #include "Common_Func.h"
 #include "Send.h"
 #include "Server.h"

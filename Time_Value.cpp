@@ -5,10 +5,6 @@
  *      Author: zhangyalei
  */
 
-#include <sys/time.h>
-#include <time.h>
-#include <stdio.h>
-#include <cstring>
 #include <limits.h>
 #include "Time_Value.h"
 #include "Date_Time.h"

@@ -9,7 +9,6 @@
 #define LIST_H_
 
 #include <list>
-#include "Thread_Mutex.h"
 #include "Mutex_Guard.h"
 
 template <typename Obj, typename LOCK = NULL_MUTEX>
