@@ -13,53 +13,6 @@ Svc_Tcp::Svc_Tcp(): Svc_Handler() { }
 
 Svc_Tcp::~Svc_Tcp() { }
 
-int Svc_Tcp::handle_recv(void) {
-	if (parent_->is_closed())
-		return 0;
-	
-	int cid = parent_->get_cid();
-	Block_Buffer *buf = parent_->pop_block(cid);
-	if (! buf) {
-		LIB_LOG_ERROR("tcp pop_block fail, cid:%d", cid);
-		return -1;
-	}
-	buf->reset();
-	buf->write_int32(cid);			//写入客户端连接的cid
-
-	int n = 0;
-	while (1) {
-		//每次读2k长度数据
-		buf->ensure_writable_bytes(2000);
-		n = 0;
-		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
-			if (errno == EINTR)	//被打断,重新继续读
-				continue;
-			if (errno == EWOULDBLOCK)	//EAGAIN,下一次超时再读
-				break;
-
-			LIB_LOG_ERROR("tcp read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else if (n == 0) { //读数据遇到eof结束符，关闭连接
-			LIB_LOG_ERROR("tcp read eof close cid:%d fd=%d", cid, parent_->get_fd());
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else {		//读取成功
-			buf->set_write_idx(buf->get_write_idx() + n);
-		}
-	}
-
-	if (push_recv_block(buf) == 0) {
-		parent_->recv_handler(cid);
-	} else {
-		parent_->push_block(cid, buf);
-	}
-
-	return 0;
-}
-
 int Svc_Tcp::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;

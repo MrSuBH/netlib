@@ -134,7 +134,3 @@ void Accept::run_handler(void) {
 void Accept::exit_handler(void) {
 	fini();
 }
-
-int Accept::get_port(void) {
-	return port_;
-}

@@ -180,7 +180,7 @@ int Send::handle_timeout(const Time_Value &tv) {
 	for (Svc_Map::iterator it = svc_map_.begin(); it != svc_map_.end(); ++it) {
 		if (it->second->is_closed())
 			continue;
-		it->second->send_data();
+		it->second->handle_send();
 	}
 
 	return 0;

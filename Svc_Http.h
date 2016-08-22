@@ -20,7 +20,6 @@ public:
 	Svc_Http(void);
 	virtual ~Svc_Http(void);
 
-	virtual int handle_recv(void);
 	virtual int handle_send(void);
 	virtual int handle_pack(Block_Vector &block_vec);
 

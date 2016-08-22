@@ -58,7 +58,8 @@ int Connector_Send::push_block(int cid, Block_Buffer *buf) {
 }
 
 int Connector_Send::drop_handler(int cid) {
-	return connector_->pack().push_drop(cid);
+	LIB_LOG_INFO("connector drop_handler, cid = %d", cid);
+	return connector_->recycle_svc(cid);
 }
 
 Svc *Connector_Send::find_svc(int cid) {
@@ -67,39 +68,16 @@ Svc *Connector_Send::find_svc(int cid) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Svc *Connector_Pack::find_svc(int cid) {
-	return connector_->find_svc(cid);
-}
-
-Block_Buffer *Connector_Pack::pop_block(int cid) {
-	return connector_->pop_block(cid);
-}
-
-int Connector_Pack::push_block(int cid, Block_Buffer *block) {
-	return connector_->push_block(cid, block);
-}
-
-int Connector_Pack::packed_data_handler(Block_Vector &block_vec) {
-	for (Block_Vector::iterator it = block_vec.begin(); it != block_vec.end(); ++it) {
-		connector_->block_list().push_back(*it);
-	}
-	return 0;
-}
-
-int Connector_Pack::drop_handler(int cid) {
-	LIB_LOG_INFO("drop_handler, cid = %d.", cid);
-	connector_->recycle_svc(cid);
-	return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 Block_Buffer *Connector_Svc::pop_block(int cid) {
 	return connector_->pop_block(cid);
 }
 
-int Connector_Svc::push_block(int cid, Block_Buffer *block) {
-	return connector_->push_block(cid, block);
+int Connector_Svc::push_block(int cid, Block_Buffer *buffer) {
+	return connector_->push_block(cid, buffer);
+}
+
+int Connector_Svc::post_block(Block_Buffer* buffer) {
+	return connector_->block_list().push_back(buffer);
 }
 
 int Connector_Svc::register_recv_handler(void) {
@@ -134,11 +112,6 @@ int Connector_Svc::unregister_send_handler(void) {
 	return 0;
 }
 
-int Connector_Svc::recv_handler(int cid) {
-	connector_->pack().push_packing_cid(cid);
-	return 0;
-}
-
 int Connector_Svc::close_handler(int cid) {
 	connector_->receive().push_drop(cid);
 	return 0;
@@ -146,7 +119,7 @@ int Connector_Svc::close_handler(int cid) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Connector::Connector(void):cid_(-1),port_(0) { }
+Connector::Connector(void):cid_(-1),server_port_(0) { }
 
 Connector::~Connector(void) { }
 
@@ -158,13 +131,12 @@ void Connector::process_list(void) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 }
 
-void Connector::set(std::string ip, int port, Time_Value &send_interval) {
-	ip_ = ip;
-	port_ = port;
+void Connector::set(std::string &server_ip, int server_port, Time_Value &send_interval) {
+	server_ip_ = server_ip;
+	server_port_ = server_port;
 	connect_.set(this);
 	receive_.set(0, this);
 	send_.set(0, this, send_interval);
-	pack_.set(0, this);
 }
 
 int Connector::init(void) {
@@ -176,12 +148,11 @@ int Connector::init(void) {
 int Connector::start(void) {
 	receive_.thr_create();
 	send_.thr_create();
-	pack_.thr_create();
 	return 0;
 }
 
 int Connector::connect_server(void) {
-	cid_ = connect_.connect(ip_.c_str(), port_);
+	cid_ = connect_.connect(server_ip_.c_str(), server_port_);
 	LIB_LOG_DEBUG("cid_ = %d", cid_);
 	return cid_;
 }

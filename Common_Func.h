@@ -5,8 +5,8 @@
  *      Author: zhangyalei
  */
 
-#ifndef COMM_FUNC_H_
-#define COMM_FUNC_H_
+#ifndef COMMON_FUNC_H_
+#define COMMON_FUNC_H_
 
 #include <execinfo.h>
 #include <math.h>
@@ -16,7 +16,6 @@
 #include <sys/resource.h>
 #include <string.h>
 #include <stdint.h>
-#include "Time_Value.h"
 #include "Date_Time.h"
 #include "Lib_Log.h"
 
@@ -114,4 +113,9 @@ inline bool is_double_lt_zero(double value) { return value < -0.0000001; }
 inline int division(int dividend, int divisor) { return !divisor ? 0 : dividend/divisor; }
 inline double division(double dividend, double divisor) { return is_double_zero(divisor) ? 0.0 : dividend/divisor; }
 
-#endif /* COMM_FUNC_H_ */
+//base64编码解码
+inline bool is_base64(unsigned char c) { return (isalnum(c) || (c == '+') || (c == '/')); }
+std::string base64_encode(unsigned char const* , unsigned int len);
+std::string base64_decode(std::string const& s);
+
+#endif /* COMMON_FUNC_H_ */

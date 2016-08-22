@@ -5,11 +5,10 @@
  *      Author: zhangyalei
  */
 
-#ifndef LIB_SERVER_H_
-#define LIB_SERVER_H_
+#ifndef SERVER_H_
+#define SERVER_H_
 
 #include "Accept.h"
-#include "Pack.h"
 #include "Receive.h"
 #include "Send.h"
 #include "Svc.h"
@@ -24,31 +23,9 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Server_Svc: public Svc {
-public:
-	virtual Block_Buffer *pop_block(int cid);
-
-	virtual int push_block(int cid, Block_Buffer *block);
-
-	virtual int register_recv_handler(void);
-
-	virtual int unregister_recv_handler(void);
-
-	virtual int register_send_handler(void);
-
-	virtual int unregister_send_handler(void);
-
-	virtual int recv_handler(int cid);
-
-	virtual int close_handler(int cid);
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
 class Server_Receive: public Receive {
 public:
 	virtual int drop_handler(int cid);
-
 	virtual Svc *find_svc(int cid);
 };
 
@@ -58,27 +35,27 @@ class Server_Send: public Send {
 public:
 	/// 获取、释放一个buf
 	virtual Block_Buffer *pop_block(int cid);
-
 	virtual int push_block(int cid, Block_Buffer *buf);
 
 	virtual int drop_handler(int cid);
-
 	virtual Svc *find_svc(int cid);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Server_Pack: public Pack {
+class Server_Svc: public Svc {
 public:
-	virtual Svc *find_svc(int cid);
-
 	virtual Block_Buffer *pop_block(int cid);
+	virtual int push_block(int cid, Block_Buffer *buffer);
+	virtual int post_block(Block_Buffer* buffer);
 
-	virtual int push_block(int cid, Block_Buffer *block);
+	virtual int register_recv_handler(void);
+	virtual int unregister_recv_handler(void);
 
-	virtual int packed_data_handler(Block_Vector &block_vec);
+	virtual int register_send_handler(void);
+	virtual int unregister_send_handler(void);
 
-	virtual int drop_handler(int cid);
+	virtual int close_handler(int cid);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +84,6 @@ public:
 	inline Server_Accept &accept(void) { return accept_; }
 	inline Server_Receive &receive(void) { return receive_; }
 	inline Server_Send &send(void) { return send_; }
-	inline Server_Pack &pack(void) { return pack_; }
 	inline NetWork_Protocol network_protocol_type(void) { return network_protocol_type_; }
 
 	Block_Buffer *pop_block(int cid);
@@ -132,8 +108,7 @@ private:
 	Server_Accept accept_;
 	Server_Receive receive_;
 	Server_Send send_;
-	Server_Pack pack_;
 	NetWork_Protocol network_protocol_type_;
 };
 
-#endif /* LIB_SERVER_H_ */
+#endif /* SERVER_H_ */

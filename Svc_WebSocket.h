@@ -18,7 +18,6 @@ public:
 	virtual ~Svc_Websocket(void);
 
 	void reset(void);
-	virtual int handle_recv(void);
 	virtual int handle_send(void);
 	virtual int handle_pack(Block_Vector &block_vec);
 
@@ -28,7 +27,7 @@ private:
 	Block_Buffer *make_websocket_frame(Block_Buffer *buf, uint8_t *op = NULL);
 
 private:
-	bool websocket_connected_;
+	bool connected_;
 };
 
 #endif

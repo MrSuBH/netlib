@@ -49,11 +49,9 @@ public:
 	 * heart_second制定IO心跳超时时间
 	 */
 	Epoll_Watcher(int type = 0, int heart_second = 30);
-
 	virtual ~Epoll_Watcher(void);
 
 	int init(void);
-
 	int fini(void);
 
 	/**
@@ -82,17 +80,13 @@ public:
 
 private:
 	int open(void);
-
 	int io_open(void);
-
 	int timer_open(void);
 
 	int add_io(Event_Handler *evh, int op);
-
 	int add_timer(Event_Handler *evh, int op, Time_Value *tv);
 
 	int remove_io(Event_Handler *evh);
-
 	int remove_timer(Event_Handler *evh);
 
 	/// 计算epoll_wait的超时时间
@@ -104,7 +98,6 @@ private:
 	void watcher_loop(void);
 
 	int handle_input(void);
-
 	int handle_timeout(const Time_Value &tv);
 
 	int next_heart_idx(void);

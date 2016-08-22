@@ -14,53 +14,6 @@ Svc_Http::Svc_Http(): Svc_Handler() {}
 
 Svc_Http::~Svc_Http() {}
 
-int Svc_Http::handle_recv(void) {
-	if (parent_->is_closed())
-		return 0;
-
-	int cid = parent_->get_cid();
-	Block_Buffer *buf = parent_->pop_block(cid);
-	if (! buf) {
-		LIB_LOG_ERROR("http pop_block fail, cid:%d", cid);
-		return -1;
-	}
-	buf->reset();
-	buf->write_int32(cid);
-
-	int n = 0;
-	while (1) {
-		//每次读2k长度数据
-		buf->ensure_writable_bytes(2000);
-		n = 0;
-		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
-			if (errno == EINTR)
-				continue;
-			if (errno == EWOULDBLOCK)
-				break;
-
-			LIB_LOG_ERROR("tcp read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else if (n == 0) { /// EOF
-			LIB_LOG_ERROR("tcp read eof close cid:%d fd=%d", cid, parent_->get_fd());
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else {
-			buf->set_write_idx(buf->get_write_idx() + n);
-		}
-	}
-
-	if (push_recv_block(buf) == 0) {
-		parent_->recv_handler(cid);
-	} else {
-		parent_->push_block(cid, buf);
-	}
-
-	return 0;
-}
-
 int Svc_Http::handle_send(void) {
 	if (parent_->is_closed())
 		return 0;

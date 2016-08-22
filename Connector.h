@@ -5,11 +5,10 @@
  *      Author: zhangyalei
  */
 
-#ifndef LIB_CONNECTOR_H_
-#define LIB_CONNECTOR_H_
+#ifndef CONNECTOR_H_
+#define CONNECTOR_H_
 
 #include "Connect.h"
-#include "Pack.h"
 #include "Receive.h"
 #include "Send.h"
 #include "Svc.h"
@@ -24,31 +23,9 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Connector_Svc: public Svc {
-public:
-	virtual Block_Buffer *pop_block(int cid);
-
-	virtual int push_block(int cid, Block_Buffer *block);
-
-	virtual int register_recv_handler(void);
-
-	virtual int unregister_recv_handler(void);
-
-	virtual int register_send_handler(void);
-
-	virtual int unregister_send_handler(void);
-
-	virtual int recv_handler(int cid);
-
-	virtual int close_handler(int cid);
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
 class Connector_Receive: public Receive {
 public:
 	virtual int drop_handler(int cid);
-
 	virtual Svc *find_svc(int cid);
 };
 
@@ -58,27 +35,27 @@ class Connector_Send: public Send {
 public:
 	/// 获取、释放一个buf
 	virtual Block_Buffer *pop_block(int cid);
-
 	virtual int push_block(int cid, Block_Buffer *buf);
 
 	virtual int drop_handler(int cid);
-
 	virtual Svc *find_svc(int cid);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Connector_Pack: public Pack {
+class Connector_Svc: public Svc {
 public:
-	virtual Svc *find_svc(int cid);
-
 	virtual Block_Buffer *pop_block(int cid);
+	virtual int push_block(int cid, Block_Buffer *buffer);
+	virtual int post_block(Block_Buffer* buffer);
 
-	virtual int push_block(int cid, Block_Buffer *block);
+	virtual int register_recv_handler(void);
+	virtual int unregister_recv_handler(void);
 
-	virtual int packed_data_handler(Block_Vector &block_vec);
+	virtual int register_send_handler(void);
+	virtual int unregister_send_handler(void);
 
-	virtual int drop_handler(int cid);
+	virtual int close_handler(int cid);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +72,7 @@ public:
 	void run_handler(void);
 	virtual void process_list(void);
 
-	void set(std::string ip, int port, Time_Value &send_interval);
+	void set(std::string &server_ip, int server_port, Time_Value &send_interval);
 	int init(void);
 	int start(void);
 	int connect_server(void);
@@ -105,7 +82,6 @@ public:
 	inline Data_List &block_list(void) { return block_list_;}
 	inline Connector_Receive &receive(void) { return receive_; }
 	inline Connector_Send &send(void) { return send_; }
-	inline Connector_Pack &pack(void) { return pack_; }
 	inline int get_cid(void) { return cid_; }
 
 	Block_Buffer *pop_block(int cid);
@@ -129,11 +105,10 @@ private:
 	Connector_Connect connect_;
 	Connector_Receive receive_;
 	Connector_Send send_;
-	Connector_Pack pack_;
 
 	int32_t cid_;
-	std::string ip_;
-	int port_;
+	std::string server_ip_;
+	int server_port_;
 };
 
-#endif /* LIB_CONNECTOR_H_ */
+#endif /* CONNECTOR_H_ */

@@ -15,7 +15,6 @@ public:
 	Svc_Tcp(void);
 	virtual ~Svc_Tcp(void);
 
-	virtual int handle_recv(void);
 	virtual int handle_send(void);
 	virtual int handle_pack(Block_Vector &block_vec);
 };

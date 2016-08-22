@@ -56,7 +56,9 @@ int Server_Send::push_block(int cid, Block_Buffer *buf) {
 }
 
 int Server_Send::drop_handler(int cid) {
-	return server_->pack().push_drop(cid);
+	LIB_LOG_INFO("server drop_handler, cid = %d", cid);
+	server_->drop_cid_list().push_back(cid);
+	return server_->recycle_svc(cid);
 }
 
 Svc *Server_Send::find_svc(int cid) {
@@ -65,40 +67,16 @@ Svc *Server_Send::find_svc(int cid) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Svc *Server_Pack::find_svc(int cid) {
-	return server_->find_svc(cid);
-}
-
-Block_Buffer *Server_Pack::pop_block(int cid) {
-	return server_->pop_block(cid);
-}
-
-int Server_Pack::push_block(int cid, Block_Buffer *block) {
-	return server_->push_block(cid, block);
-}
-
-int Server_Pack::packed_data_handler(Block_Vector &block_vec) {
-	for (Block_Vector::iterator it = block_vec.begin(); it != block_vec.end(); ++it) {
-			server_->block_list().push_back(*it);
-	}
-	return 0;
-}
-
-int Server_Pack::drop_handler(int cid) {
-	LIB_LOG_INFO("drop_handler, cid = %d.", cid);
-	server_->drop_cid_list().push_back(cid);
-	server_->recycle_svc(cid);
-	return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 Block_Buffer *Server_Svc::pop_block(int cid) {
 	return server_->pop_block(cid);
 }
 
-int Server_Svc::push_block(int cid, Block_Buffer *block) {
-	return server_->push_block(cid, block);
+int Server_Svc::push_block(int cid, Block_Buffer *buffer) {
+	return server_->push_block(cid, buffer);
+}
+
+int Server_Svc::post_block(Block_Buffer* buffer) {
+	return server_->block_list().push_back(buffer);
 }
 
 int Server_Svc::register_recv_handler(void) {
@@ -133,11 +111,6 @@ int Server_Svc::unregister_send_handler(void) {
 	return 0;
 }
 
-int Server_Svc::recv_handler(int cid) {
-	server_->pack().push_packing_cid(cid);
-	return 0;
-}
-
 int Server_Svc::close_handler(int cid) {
 	server_->receive().push_drop(cid);
 	return 0;
@@ -161,7 +134,6 @@ void Server::set(int port, Time_Value &recv_timeout, Time_Value &send_interval, 
 	accept_.set(this, port);
 	receive_.set(this, 0, &recv_timeout);
 	send_.set(this, 0, send_interval);
-	pack_.set(this, 0);
 	network_protocol_type_ = (NetWork_Protocol)protocol_type;
 }
 
@@ -176,7 +148,6 @@ int Server::start(void) {
 	accept_.thr_create();
 	receive_.thr_create();
 	send_.thr_create();
-	pack_.thr_create();
 	return 0;
 }
 

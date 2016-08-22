@@ -28,10 +28,9 @@ public:
 
 	void set_parent(Svc *parent) { parent_ = parent; }
 
-	int push_recv_block(Block_Buffer *buf);
-	int push_send_block(Block_Buffer *buf);
+	int push_recv_block(Block_Buffer *buffer);
+	int push_send_block(Block_Buffer *buffer);
 
-	virtual int handle_recv(void) = 0;
 	virtual int handle_send(void) = 0;
 	virtual int handle_pack(Block_Vector &block_vec) = 0;
 
@@ -54,7 +53,8 @@ public:
 	void reset(void);
 
 	virtual Block_Buffer *pop_block(int cid);
-	virtual int push_block(int cid, Block_Buffer *block);
+	virtual int push_block(int cid, Block_Buffer *buffer);
+	virtual int post_block(Block_Buffer* buffer);
 
 	virtual int register_recv_handler(void);
 	virtual int unregister_recv_handler(void);
@@ -62,20 +62,20 @@ public:
 	virtual int register_send_handler(void);
 	virtual int unregister_send_handler(void);
 
-	virtual int recv_handler(int cid);
 	virtual int close_handler(int cid);
 
-	virtual int handle_input(void);
-	virtual int handle_close(void);
+	int create_handler(NetWork_Protocol protocol_type);
 
+	//接收数据
+	virtual int handle_input(void);
+	//发送数据
+	virtual int handle_send(void);
+
+	virtual int handle_close(void);
 	int close_fd(void);
 
-	int recv_data(void);
-	int send_data(void);
-	int pack_data(Block_Vector &block_vec);
-
-	int push_recv_block(Block_Buffer *buf);
-	int push_send_block(Block_Buffer *buf);
+	int push_recv_block(Block_Buffer *buffer);
+	int push_send_block(Block_Buffer *buffer);
 
 	void set_cid(int cid);
 	int get_cid(void);
@@ -98,8 +98,6 @@ public:
 	
 	std::string get_peer_ip();
 	int get_peer_port();
-
-	void create_handler(NetWork_Protocol protocol_type);
 
 protected:
 	Server *server_;
@@ -135,16 +133,16 @@ inline void Svc::reset(void) {
 	Event_Handler::reset();
 }
 
-inline int Svc::push_recv_block(Block_Buffer *buf) {
+inline int Svc::push_recv_block(Block_Buffer *buffer) {
 	if (is_closed_)
 		return -1;
-	return handler_->push_recv_block(buf);
+	return handler_->push_recv_block(buffer);
 }
 
-inline int Svc::push_send_block(Block_Buffer *buf) {
+inline int Svc::push_send_block(Block_Buffer *buffer) {
 	if (is_closed_)
 		return -1;
-	return handler_->push_send_block(buf);
+	return handler_->push_send_block(buffer);
 }
 
 inline void Svc::set_cid(int cid) {

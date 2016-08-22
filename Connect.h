@@ -5,11 +5,10 @@
  *      Author: zhangyalei
  */
 
-#ifndef CONNECTOR_H_
-#define CONNECTOR_H_
+#ifndef CONNECT_H_
+#define CONNECT_H_
 
 class Connector;
-
 class Connect {
 public:
 	Connect(void);
@@ -23,4 +22,4 @@ protected:
 	Connector *connector_;
 };
 
-#endif /* CONNECTOR_H_ */
+#endif /* CONNECT_H_ */

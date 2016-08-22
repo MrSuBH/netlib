@@ -5,8 +5,8 @@
  *      Author: zhangyalei
  */
 
-#ifndef RECEIVER_H_
-#define RECEIVER_H_
+#ifndef RECEIVE_H_
+#define RECEIVE_H_
 
 #include "Thread.h"
 #include "Svc.h"
@@ -16,11 +16,9 @@
 class Receive;
 class Server;
 class Connector;
-
 class Receive_Watcher: public Epoll_Watcher {
 public:
 	Receive_Watcher(Receive *r, int type = 0, int timeout = 0);
-
 	virtual ~Receive_Watcher(void);
 
 	virtual int inner_cmd(void);
@@ -30,17 +28,14 @@ private:
 };
 
 class Receive: public Thread {
+public:
 	typedef List<int, Thread_Mutex> Drop_List;
 
-public:
 	Receive(void);
-
 	virtual ~Receive(void);
 
 	int set(Server *server, Connector *connector, Time_Value *timeout = 0);
-
 	int init(void);
-
 	int fini(void);
 
 	virtual void run_handler(void);
@@ -48,15 +43,12 @@ public:
 	Epoll_Watcher *reactor(void);
 
 	int push_drop(int cid);
-
 	int process_drop(void);
 
 	int register_svc(Svc *svc);
-
 	int unregister_svc(Svc *svc);
 
 	virtual int drop_handler(int cid);
-
 	virtual Svc *find_svc(int cid);
 
 protected:
@@ -69,5 +61,5 @@ private:
 	Receive_Watcher *reactor_;
 };
 
-#endif /* RECEIVER_H_ */
+#endif /* RECEIVE_H_ */
 

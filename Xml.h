@@ -35,6 +35,7 @@ public:
 	std::string get_attr_str(TiXmlNode* node, const char *key = NULL);
 	int get_attr_int(TiXmlNode* node, const char *key = NULL);
 	float get_attr_float(TiXmlNode* node, const char *key = NULL);
+
 private:
 	TiXmlElement *rootElement_;
 	TiXmlDocument *doc_;

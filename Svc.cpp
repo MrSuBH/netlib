@@ -5,6 +5,8 @@
  *      Author: zhangyalei
  */
 
+#include <sys/socket.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include "Server.h"
 #include "Connector.h"
@@ -41,22 +43,23 @@ void Svc_Handler::reset(void) {
 	max_pack_size_ = SVC_MAX_PACK_SIZE;
 }
 
-int Svc_Handler::push_recv_block(Block_Buffer *buf) {
+int Svc_Handler::push_recv_block(Block_Buffer *buffer) {
 	if (recv_block_list_.size() >= max_list_size_) {
-		LIB_LOG_ERROR("recv_block_list_ has full.");
-		return -1;
-	}
-	recv_block_list_.push_back(buf);
-	return 0;
-}
-
-int Svc_Handler::push_send_block(Block_Buffer *buf) {
-	if (send_block_list_.size() >= max_list_size_) {
-		LIB_LOG_ERROR("send_block_list_ full cid = %d, send_block_list_.size() = %d, max_list_size_ = %d", parent_->get_cid(), send_block_list_.size(), max_list_size_);
+		LIB_LOG_ERROR("recv_block_list_ full cid = %d, size() = %d, max_list_size_ = %d", parent_->get_cid(), send_block_list_.size(), max_list_size_);
 		parent_->handle_close();
 		return -1;
 	}
-	send_block_list_.push_back(buf);
+	recv_block_list_.push_back(buffer);
+	return 0;
+}
+
+int Svc_Handler::push_send_block(Block_Buffer *buffer) {
+	if (send_block_list_.size() >= max_list_size_) {
+		LIB_LOG_ERROR("send_block_list_ full cid = %d, size() = %d, max_list_size_ = %d", parent_->get_cid(), send_block_list_.size(), max_list_size_);
+		parent_->handle_close();
+		return -1;
+	}
+	send_block_list_.push_back(buffer);
 	return 0;
 }
 
@@ -86,7 +89,12 @@ Block_Buffer *Svc::pop_block(int cid) {
 	return 0;
 }
 
-int Svc::push_block(int cid, Block_Buffer *block) {
+int Svc::push_block(int cid, Block_Buffer *buffer) {
+	LIB_LOG_TRACE("SHOULD NOT HERE");
+	return 0;
+}
+
+int Svc::post_block(Block_Buffer* buffer) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
@@ -111,18 +119,83 @@ int Svc::unregister_send_handler(void) {
 	return 0;
 }
 
-int Svc::recv_handler(int cid) {
-	LIB_LOG_TRACE("SHOULD NOT HERE");
-	return 0;
-}
-
 int Svc::close_handler(int cid) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
+int Svc::create_handler(NetWork_Protocol protocol_type) {
+	switch(protocol_type){
+		case TCP:
+			handler_ = new Svc_Tcp;
+			break;
+		case UDP:
+			break;
+		case WEBSOCKET:
+			handler_ = new Svc_Websocket;
+			break;
+		case HTTP:
+			handler_ = new Svc_Http;
+			break;
+		default:
+			break;
+	}
+	handler_->set_parent(this);
+	return 0;
+}
+
 int Svc::handle_input(void) {
-	return recv_data();
+	if (is_closed())
+		return 0;
+
+	Block_Buffer *buf = pop_block(cid_);
+	if (! buf) {
+		LIB_LOG_ERROR("pop_block fail, cid:%d", cid_);
+		return -1;
+	}
+	buf->reset();
+	buf->write_int32(cid_);			//写入客户端连接的cid
+
+	int n = 0;
+	while (1) {
+		//每次读2k长度数据
+		buf->ensure_writable_bytes(2000);
+		n = 0;
+		if ((n = ::read(get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
+			if (errno == EINTR)	//被打断,重新继续读
+				continue;
+			if (errno == EWOULDBLOCK)	//EAGAIN,表示现在没有数据可读,下一次超时再读
+				break;
+
+			LIB_LOG_ERROR("read data return:%d cid:%d fd=%d", n, cid_, get_fd());
+			push_block(cid_, buf);
+			handle_close();
+			return 0;
+		} else if (n == 0) { //读数据遇到eof结束符，关闭连接
+			LIB_LOG_ERROR("read data return eof cid:%d fd=%d", cid_, get_fd());
+			push_block(cid_, buf);
+			handle_close();
+			return 0;
+		} else {		//读取成功
+			buf->set_write_idx(buf->get_write_idx() + n);
+		}
+	}
+
+	if (push_recv_block(buf) == 0) {
+		//读取数据成功，进行解包处理
+		Block_Vector block_vec;
+		handler_->handle_pack(block_vec);
+		for (Block_Vector::iterator iter = block_vec.begin(); iter != block_vec.end(); ++iter) {
+			post_block(*iter);
+		}
+	} else {
+		push_block(cid_, buf);
+	}
+	return 0;
+}
+
+int Svc::handle_send(void) {
+	return handler_->handle_send();
 }
 
 int Svc::handle_close(void) {
@@ -176,35 +249,4 @@ int Svc::get_local_addr(std::string &ip, int &port) {
 	port = ntohs(sa.sin_port);
 
 	return 0;
-}
-
-int Svc::recv_data(void) {
-	return handler_->handle_recv();
-}
-
-int Svc::send_data(void) {
-	return handler_->handle_send();
-}
-
-int Svc::pack_data(Block_Vector &block_vec){
-	return handler_->handle_pack(block_vec);
-}
-
-void Svc::create_handler(NetWork_Protocol protocol_type) {
-	switch(protocol_type){
-		case TCP:
-			handler_ = new Svc_Tcp;
-			break;
-		case UDP:
-			break;
-		case WEBSOCKET:
-			handler_ = new Svc_Websocket;
-			break;
-		case HTTP:
-			handler_ = new Svc_Http;
-			break;
-		default:
-			break;
-	}
-	handler_->set_parent(this);
 }

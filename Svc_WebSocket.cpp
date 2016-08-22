@@ -8,68 +8,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include "Sha1.h"
-#include "Base64.h"
-#include "Svc_WebSocket.h"
 #include "boost/unordered_map.hpp"
+#include "Sha1.h"
+#include "Common_Func.h"
+#include "Svc_WebSocket.h"
 
 Svc_Websocket::Svc_Websocket():
 	Svc_Handler(),
-	websocket_connected_(false)
+	connected_(false)
 { }
 
 Svc_Websocket::~Svc_Websocket() {}
 
 void Svc_Websocket::reset(void) {
-	websocket_connected_ = false;
+	connected_ = false;
 	Svc_Handler::reset();
-}
-
-int Svc_Websocket::handle_recv(void) {
-	if (parent_->is_closed())
-		return 0;
-	
-	int cid = parent_->get_cid();
-	Block_Buffer *buf = parent_->pop_block(cid);
-	if (! buf) {
-		LIB_LOG_ERROR("websocket pop_block fail, cid:%d", cid);
-		return -1;
-	}
-	buf->reset();
-	buf->write_int32(cid);
-
-	int n = 0;
-	while (1) {
-		//每次读2k长度数据
-		buf->ensure_writable_bytes(2000);
-		n = 0;
-		if ((n = ::read(parent_->get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
-			if (errno == EINTR)
-				continue;
-			if (errno == EWOULDBLOCK)
-				break;
-
-			LIB_LOG_ERROR("websocket read < 0 cid:%d fd=%d,n:%d", cid, parent_->get_fd(), n);
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else if (n == 0) { /// EOF
-			LIB_LOG_ERROR("websocket read eof close cid:%d fd=%d", cid, parent_->get_fd());
-			parent_->push_block(cid, buf);
-			parent_->handle_close();
-			return 0;
-		} else {
-			buf->set_write_idx(buf->get_write_idx() + n);
-		}
-	}
-
-	if (push_recv_block(buf) == 0) {
-		parent_->recv_handler(cid);
-	} else {
-		parent_->push_block(cid, buf);
-	}
-
-	return 0;
 }
 
 int Svc_Websocket::handle_send(void) {
@@ -133,7 +86,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 
 		rd_idx_orig = front_buf->get_read_idx();
 		cid = front_buf->read_int32();
-		if(!websocket_connected_){
+		if(!connected_) {
 			return websocket_handshake(front_buf);
 		}
 
@@ -327,7 +280,7 @@ int Svc_Websocket::websocket_handshake(Block_Buffer *buf) {
 	server_key += "\r\n\r\n";
 	strcat(respond, server_key.c_str());
 	
-	websocket_connected_ = true;
+	connected_ = true;
 	//握手包必然是该连接第一个包，这里直接将响应内容写入内核发送缓存
 	write(parent_->get_fd(), respond, strlen(respond));
 	return 0;

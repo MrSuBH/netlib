@@ -17,7 +17,6 @@ public:
 	static Log_Connector *instance(void);
 
 	int push_data_block(Block_Buffer &buf, bool use_swap = true);
-
 	virtual void process_list(void);
 
 private:
