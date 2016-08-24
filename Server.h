@@ -35,7 +35,7 @@ class Server_Send: public Send {
 public:
 	/// 获取、释放一个buf
 	virtual Block_Buffer *pop_block(int cid);
-	virtual int push_block(int cid, Block_Buffer *buf);
+	virtual int push_block(int cid, Block_Buffer *buffer);
 
 	virtual int drop_handler(int cid);
 	virtual Svc *find_svc(int cid);
@@ -87,13 +87,13 @@ public:
 	inline NetWork_Protocol network_protocol_type(void) { return network_protocol_type_; }
 
 	Block_Buffer *pop_block(int cid);
-	int push_block(int cid, Block_Buffer *buf);
-	int send_block(int cid, Block_Buffer &buf);
+	int push_block(int cid, Block_Buffer *buffer);
+	int send_block(int cid, Block_Buffer &buffer);
 
 	Svc *find_svc(int cid);
 	int recycle_svc(int cid);
 
-	int get_server_info(Server_Info &info);
+	int get_server_info(Server_Info &server_info);
 	void free_cache(void);
 
 protected:

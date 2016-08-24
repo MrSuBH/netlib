@@ -20,7 +20,6 @@ class Send: public Thread, public Event_Handler {
 	typedef Thread_Mutex Svc_Map_Lock;
 	typedef boost::unordered_map<int, Svc *> Svc_Map;
 	typedef List<int, Thread_Mutex> Drop_List;
-	typedef Block_List<Thread_Mutex> Data_Block_List;
 
 public:
 	Send(void);
@@ -32,12 +31,11 @@ public:
 
 	virtual void run_handler(void);
 
-	/// 获取、释放一个buf
 	virtual Block_Buffer *pop_block(int cid);
-	virtual int push_block(int cid, Block_Buffer *buf);
+	virtual int push_block(int cid, Block_Buffer *buffer);
 
-	int push_data_block_with_len(int cid, Block_Buffer &rbuf);
-	int append_send_block(void);
+	//将要发送的数据包放到svc的send_block_list里面
+	int push_svc_block(int cid, Block_Buffer &buffer);
 
 	int push_drop(int cid);
 	int process_drop(void);
@@ -63,7 +61,6 @@ protected:
 
 private:
 	Epoll_Watcher *reactor_;
-	Data_Block_List append_list_;
 	Drop_List drop_list_;
 
 	Svc_Map_Lock svc_map_lock_;

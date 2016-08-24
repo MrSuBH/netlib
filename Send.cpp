@@ -57,47 +57,35 @@ Block_Buffer *Send::pop_block(int cid) {
 	return 0;
 }
 
-int Send::push_block(int cid, Block_Buffer *buf) {
+int Send::push_block(int cid, Block_Buffer *buffer) {
 	LIB_LOG_TRACE("SHOULD NOT HERE");
 	return 0;
 }
 
-int Send::push_data_block_with_len(int cid, Block_Buffer &rbuf) {
-	if (rbuf.readable_bytes() <= 0) {
-		LIB_LOG_TRACE("block readable_bytes = %ul.", rbuf.readable_bytes());
+int Send::push_svc_block(int cid, Block_Buffer &buffer) {
+	if (buffer.readable_bytes() <= 0) {
+		LIB_LOG_ERROR("block readable_bytes = %d", buffer.readable_bytes());
+		return -1;
+	}
+
+	Svc *svc = find_svc(cid);
+	if (!svc) {
+		LIB_LOG_ERROR("find svc eror,cid = %d", cid);
 		return -1;
 	}
 
 	Block_Buffer *buf = pop_block(cid);
-	if (! buf) {
-		LIB_LOG_TRACE("buf == 0");
+	if (!buf) {
+		LIB_LOG_ERROR("pop buf is null, cid = %d", cid);
 		return -1;
 	}
 
 	buf->reset();
-	buf->write_int32(cid);
-	buf->copy(&rbuf);
-	append_list_.push_back(buf);
-
-	return 0;
-}
-
-
-int Send::append_send_block(void) {
-	int32_t cid = 0;
-	Block_Buffer *buf = 0;
-	Svc *svc = 0;
-
-	while ((buf = append_list_.pop_front()) != 0) {
-		cid = buf->read_int32();
-		if ((svc = find_svc(cid)) != 0) {
-			if ((svc->push_send_block(buf)) != 0) {
-				push_block(cid, buf);
-			}
-		} else {
-			push_block(cid, buf);
-		}
+	buf->copy(&buffer);
+	if ((svc->push_send_block(buf)) != 0) {
+		push_block(cid, buf);
 	}
+
 	return 0;
 }
 
@@ -173,7 +161,6 @@ void Send::set_interval(Time_Value &tv) {
 }
 
 int Send::handle_timeout(const Time_Value &tv) {
-	append_send_block();
 	process_drop();
 
 	GUARD(Svc_Map_Lock, mon, svc_map_lock_);

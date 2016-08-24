@@ -51,8 +51,8 @@ Block_Buffer *Server_Send::pop_block(int cid) {
 	return server_->pop_block(cid);
 }
 
-int Server_Send::push_block(int cid, Block_Buffer *buf) {
-	return server_->push_block(cid, buf);
+int Server_Send::push_block(int cid, Block_Buffer *buffer) {
+	return server_->push_block(cid, buffer);
 }
 
 int Server_Send::drop_handler(int cid) {
@@ -155,12 +155,12 @@ Block_Buffer *Server::pop_block(int cid) {
 	return block_pool_group_.pop_block(cid);
 }
 
-int Server::push_block(int cid, Block_Buffer *buf) {
-	return block_pool_group_.push_block(cid, buf);
+int Server::push_block(int cid, Block_Buffer *buffer) {
+	return block_pool_group_.push_block(cid, buffer);
 }
 
-int Server::send_block(int cid, Block_Buffer &buf) {
-	return send_.push_data_block_with_len(cid, buf);
+int Server::send_block(int cid, Block_Buffer &buffer) {
+	return send_.push_svc_block(cid, buffer);
 }
 
 Svc *Server::find_svc(int cid) {
@@ -181,11 +181,11 @@ int Server::recycle_svc(int cid) {
 	return 0;
 }
 
-int Server::get_server_info(Server_Info &info) {
-	info.svc_pool_free_list_size_ = svc_pool_.free_obj_list_size();
-	info.svc_pool_used_list_size_ = svc_pool_.used_obj_list_size();
-	info.svc_list_size_ = svc_static_list_.size();
-	block_pool_group_.block_group_info(info.block_group_info_);
+int Server::get_server_info(Server_Info &server_info) {
+	server_info.svc_pool_free_list_size_ = svc_pool_.free_obj_list_size();
+	server_info.svc_pool_used_list_size_ = svc_pool_.used_obj_list_size();
+	server_info.svc_list_size_ = svc_static_list_.size();
+	block_pool_group_.block_group_info(server_info.block_group_info_);
 	return 0;
 }
 
