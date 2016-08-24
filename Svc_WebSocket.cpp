@@ -39,13 +39,13 @@ int Svc_Websocket::handle_send(void) {
 		size_t sum_bytes = data_buf->readable_bytes();
 		int ret = ::write(parent_->get_fd(), data_buf->get_read_ptr(), sum_bytes);
 		if (ret == -1) {
-			LIB_LOG_ERROR("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			parent_->push_block(cid, data_buf);
 			if (errno == EINTR) { //被打断, 重写
 				continue;
 			} else if (errno == EWOULDBLOCK) { //EAGAIN,下一次超时再写
-				return ret;
+				break;
 			} else { //其他错误，丢掉该客户端全部数据
+				LIB_LOG_ERROR("write cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 				parent_->handle_close();
 				return ret;
 			}

@@ -21,6 +21,16 @@ enum NetWork_Protocol {
 	HTTP = 3,
 };
 
+enum Event_Type {
+	EVENT_INPUT 		= 0x1,
+	EVENT_OUTPUT 		= 0x2,
+	EVENT_TIMEOUT 		= 0x4,
+	EVENT_ONCE_IO_IN 	= 0x8,		/// 一次性IO输入事件
+	EVENT_ONCE_IO_OUT 	= 0x10,		/// 一次性IO输出事件
+	EVENT_ONCE_TIMER 	= 0x20,		/// 一次性定时器事件
+	WITH_IO_HEARTBEAT 	= 0x40,		/// IO附带心跳机制
+};
+
 enum {
 	LOG_TRACE = 0,				//打印程序运行堆栈，跟踪记录数据信息，与DEBUG相比更细致化的记录信息
 	LOG_DEBUG = 1,				//细粒度信息事件对调试应用程序是非常有帮助的

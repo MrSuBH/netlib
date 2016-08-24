@@ -24,7 +24,7 @@ int Svc_Tcp::handle_send(void) {
 		std::vector<Block_Buffer *> iov_buff;
 		iov_vec.clear();
 		iov_buff.clear();
-		
+
 		//将所有需要发生的数据构造成iov_vec，进行聚集写
 		if (send_block_list_.construct_iov(iov_vec, iov_buff, sum_bytes) == 0) {
 			LIB_LOG_ERROR("construct_iov return 0");
@@ -33,12 +33,12 @@ int Svc_Tcp::handle_send(void) {
 
 		int ret = ::writev(parent_->get_fd(), &*iov_vec.begin(), iov_vec.size());
 		if (ret == -1) {
-			LIB_LOG_ERROR("writev cid:%d fd:%d ip:%s port:%d errno:%d", cid, parent_->get_fd(), parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 			if (errno == EINTR) { //被打断, 重写
 				continue;
 			} else if (errno == EWOULDBLOCK) { //EAGAIN,下一次超时再写
-				return ret;
+				break;
 			} else { //其他错误，丢掉该客户端全部数据
+				LIB_LOG_ERROR("writev error, cid:%d ip:%s port:%d errno:%d", cid, parent_->get_peer_ip().c_str(), parent_->get_peer_port(), errno);
 				parent_->handle_close();
 				return ret;
 			}
@@ -88,7 +88,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 
 		rd_idx_orig = front_buf->get_read_idx();
 		cid = front_buf->read_int32();
-		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
+		if (front_buf->readable_bytes() <= 0) { //数据块异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
@@ -97,7 +97,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			return -1;
 		}
 
-		if (front_buf->readable_bytes() < sizeof(len)) { /// 2字节的包长度标识都不够
+		if (front_buf->readable_bytes() < sizeof(len)) { //2字节的包长度标识都不够
 			front_buf->set_read_idx(rd_idx_orig);
 			if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 				return 0;
@@ -109,7 +109,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 
 		len = front_buf->peek_uint16();
 		size_t data_len = front_buf->readable_bytes() - sizeof(len);
-		if (len == 0 || len > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
+		if (len == 0 || len > max_pack_size_) { //包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d data block len = %u", cid, parent_->get_fd(), len);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
@@ -125,7 +125,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			block_vec.push_back(front_buf);
 			continue;
 		} else {
-			if (data_len < (size_t)len) {		//半包，需要合并前两个包
+			if (data_len < (size_t)len) {	//半包，需要合并前两个包
 				front_buf->set_read_idx(rd_idx_orig);
 				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 					return 0;
@@ -135,7 +135,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 				}
 			}
 
-			if (data_len > len) {				//粘包，需要拆分包
+			if (data_len > len) { //粘包，需要分包
 				int cid = parent_->get_cid();
 				size_t wr_idx_orig = front_buf->get_write_idx();
 

@@ -74,30 +74,42 @@ public:
 	virtual int handle_close(void);
 	int close_fd(void);
 
-	int push_recv_block(Block_Buffer *buffer);
-	int push_send_block(Block_Buffer *buffer);
+	inline int push_recv_block(Block_Buffer *buffer) {
+		if (is_closed_) {
+			return -1;
+		} else {
+			return handler_->push_recv_block(buffer);
+		}
+	}
+	inline int push_send_block(Block_Buffer *buffer) {
+		if (is_closed_) {
+			return -1;
+		} else {
+			return handler_->push_send_block(buffer);
+		}
+	}
 
-	void set_cid(int cid);
-	int get_cid(void);
+	inline void set_cid(int cid) { cid_ = cid; }
+	inline int get_cid(void) { return cid_; }
 
-	bool get_reg_recv(void);
-	void set_reg_recv(bool val);
+	inline void set_closed(bool is_closed) { is_closed_ = is_closed; }
+	inline bool is_closed(void) { return is_closed_; }
 
-	bool get_reg_send(void);
-	void set_reg_send(bool val);
+	inline void set_reg_recv(bool is_reg_recv) { is_reg_recv_ = is_reg_recv; }
+	inline bool get_reg_recv(void) { return is_reg_recv_; }
 
-	bool is_closed(void);
-	void set_closed(bool v);
+	inline void set_reg_send(bool is_reg_send) { is_reg_send_ = is_reg_send; }
+	inline bool get_reg_send(void) { return is_reg_send_; }
 
-	void set_peer_addr(void);
+	inline void set_peer_addr(void) { get_peer_addr(peer_ip_, peer_port_); }
 	int get_peer_addr(std::string &ip, int &port);
 	int get_local_addr(std::string &ip, int &port);
 
+	inline std::string &get_peer_ip() { return peer_ip_; }
+	inline int get_peer_port() { return peer_port_; }
+
 	void set_server(Server *server);
 	void set_connector(Connector *connector);
-	
-	std::string get_peer_ip();
-	int get_peer_port();
 
 protected:
 	Server *server_;
@@ -106,7 +118,8 @@ protected:
 private:
 	int cid_;
 	bool is_closed_;
-	bool is_reg_recv_, is_reg_send_;
+	bool is_reg_recv_;
+	bool is_reg_send_;
 
 	std::string peer_ip_;
 	int peer_port_;
@@ -131,62 +144,6 @@ inline void Svc::reset(void) {
 	server_ = 0;
 	connector_ = 0;
 	Event_Handler::reset();
-}
-
-inline int Svc::push_recv_block(Block_Buffer *buffer) {
-	if (is_closed_)
-		return -1;
-	return handler_->push_recv_block(buffer);
-}
-
-inline int Svc::push_send_block(Block_Buffer *buffer) {
-	if (is_closed_)
-		return -1;
-	return handler_->push_send_block(buffer);
-}
-
-inline void Svc::set_cid(int cid) {
-	cid_ = cid;
-}
-
-inline int Svc::get_cid(void) {
-	return cid_;
-}
-
-inline bool Svc::get_reg_recv(void) {
-	return is_reg_recv_;
-}
-
-inline void Svc::set_reg_recv(bool val) {
-	is_reg_recv_ = val;
-}
-
-inline bool Svc::get_reg_send(void) {
-	return is_reg_send_;
-}
-
-inline void Svc::set_reg_send(bool val) {
-	is_reg_send_ = val;
-}
-
-inline bool Svc::is_closed(void) {
-	return is_closed_;
-}
-
-inline void Svc::set_closed(bool v) {
-	is_closed_ = v;
-}
-
-inline void Svc::set_peer_addr(void) {
-	get_peer_addr(peer_ip_, peer_port_);
-}
-
-inline std::string Svc::get_peer_ip(void) {
-	return peer_ip_;
-}
-	
-inline int Svc::get_peer_port(void) {
-	return peer_port_;
 }
 
 #endif /* SVC_H_ */

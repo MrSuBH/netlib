@@ -145,7 +145,7 @@ int Svc::create_handler(NetWork_Protocol protocol_type) {
 }
 
 int Svc::handle_input(void) {
-	if (is_closed())
+	if (is_closed_)
 		return 0;
 
 	Block_Buffer *buf = pop_block(cid_);
@@ -154,35 +154,38 @@ int Svc::handle_input(void) {
 		return -1;
 	}
 	buf->reset();
-	buf->write_int32(cid_);			//写入客户端连接的cid
+	buf->write_int32(cid_);		//写入客户端连接的cid
 
-	int n = 0;
 	while (1) {
-		//每次读2k长度数据
+		//每次保证buf有2000字节的可写空间
 		buf->ensure_writable_bytes(2000);
-		n = 0;
+		int n = 0;
 		if ((n = ::read(get_fd(), buf->get_write_ptr(), buf->writable_bytes())) < 0) {
-			if (errno == EINTR)	//被打断,重新继续读
+			if (errno == EINTR) {
+				//被打断,重新继续读
 				continue;
-			if (errno == EWOULDBLOCK)	//EAGAIN,表示现在没有数据可读,下一次超时再读
+			} else if (errno == EWOULDBLOCK){
+				//EAGAIN,表示现在没有数据可读,下一次超时再读
 				break;
-
-			LIB_LOG_ERROR("read data return:%d cid:%d fd=%d", n, cid_, get_fd());
-			push_block(cid_, buf);
-			handle_close();
-			return 0;
+			} else {
+				//遇到其他错误，断开连接
+				LIB_LOG_ERROR("read data return:%d cid:%d ip:%s port:%d errno:%d", n, cid_, peer_ip_.c_str(), peer_port_, errno);
+				push_block(cid_, buf);
+				handle_close();
+				return -1;
+			}
 		} else if (n == 0) { //读数据遇到eof结束符，关闭连接
 			LIB_LOG_ERROR("read data return eof cid:%d fd=%d", cid_, get_fd());
 			push_block(cid_, buf);
 			handle_close();
-			return 0;
-		} else {		//读取成功
+			return -1;
+		} else {		//读取数据成功，改写buf写指针，然后继续读
 			buf->set_write_idx(buf->get_write_idx() + n);
 		}
 	}
 
 	if (push_recv_block(buf) == 0) {
-		//读取数据成功，进行解包处理
+		//读取推送数据成功，进行解包处理
 		Block_Vector block_vec;
 		handler_->handle_pack(block_vec);
 		for (Block_Vector::iterator iter = block_vec.begin(); iter != block_vec.end(); ++iter) {

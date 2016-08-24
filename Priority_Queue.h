@@ -39,5 +39,4 @@ private:
 	LOCK lock_;
 };
 
-
 #endif /* PRIORITY_QUEUE_H_ */

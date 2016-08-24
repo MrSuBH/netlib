@@ -62,4 +62,3 @@ private:
 };
 
 #endif /* RECEIVE_H_ */
-

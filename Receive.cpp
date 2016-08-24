@@ -46,7 +46,7 @@ int Receive::init(void) {
 			LIB_LOG_FATAL("new Receiver_Watcher");
 		}
 	} else {
-		if ((reactor_ = new Receive_Watcher(this, Epoll_Watcher::WITH_IO_HEARTBEAT, heartbeat_timeout_.sec())) == 0) {
+		if ((reactor_ = new Receive_Watcher(this, WITH_IO_HEARTBEAT, heartbeat_timeout_.sec())) == 0) {
 			LIB_LOG_FATAL("Receiver new Reactor");
 		}
 	}
@@ -96,7 +96,7 @@ int Receive::process_drop(void) {
 }
 
 int Receive::register_svc(Svc *svc) {
-	return reactor_->add(svc, Epoll_Watcher::EVENT_INPUT);
+	return reactor_->add(svc, EVENT_INPUT);
 }
 
 int Receive::unregister_svc(Svc *svc) {

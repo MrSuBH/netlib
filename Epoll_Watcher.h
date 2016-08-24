@@ -16,34 +16,21 @@
 #include "Event_Handler.h"
 #include "Object_Pool.h"
 #include "Thread_Mutex.h"
-#include "boost/unordered_map.hpp" /// notice: 如果用std::unordered_map, 需添加-std=c++0x参数 -D__GXX_EXPERIMENTAL_CXX0X__
+#include "boost/unordered_map.hpp"
+//notice: 如果用std::unordered_map, 需添加-std=c++0x参数 -D__GXX_EXPERIMENTAL_CXX0X__
+#include "Public_Define.h"
 
-class Time_Value;
 class Epoll_Watcher : public Event_Handler {
-	/// Timer
+	//Timer
 	typedef std::priority_queue<Event_Handler *, std::vector<Event_Handler *>, Event_Handler::greater> Timer_Queue;
 	typedef boost::unordered_set<Event_Handler *> Event_Timer_Set;
-
-	/// IO
+	//IO
 	typedef std::vector<Event_Handler *> Event_Map;
-
-	/// 心跳
+	//心跳
 	typedef boost::unordered_map<int, Event_Handler *> Heart_Map;
-
 	typedef RE_Mutex Mutex;
 
 public:
-
-	enum {
-		EVENT_INPUT 		= 0x1,
-		EVENT_OUTPUT 		= 0x2,
-		EVENT_TIMEOUT 		= 0x4,
-		EVENT_ONCE_IO_IN 	= 0x8,		/// 一次性IO输入事件
-		EVENT_ONCE_IO_OUT 	= 0x10,		/// 一次性IO输出事件
-		EVENT_ONCE_TIMER 	= 0x20,		/// 一次性定时器事件
-		WITH_IO_HEARTBEAT 	= 0x40,		/// IO附带心跳机制
-	};
-
 	/**
 	 * type可以指定IO附带心跳机制: WITH_IO_HEARTBEAT
 	 * heart_second制定IO心跳超时时间

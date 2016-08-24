@@ -131,7 +131,7 @@ int Send::register_self_timer(void) {
 	}
 
 	if (! is_register_self_) {
-		reactor_->add(this, Epoll_Watcher::EVENT_TIMEOUT, &interval_);
+		reactor_->add(this, EVENT_TIMEOUT, &interval_);
 		is_register_self_ = true;
 	}
 
