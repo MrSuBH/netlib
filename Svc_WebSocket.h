@@ -22,9 +22,12 @@ public:
 	virtual int handle_pack(Block_Vector &block_vec);
 
 private:
-	Block_Buffer *get_websocket_payload(int16_t payload_length, uint8_t *masking_key, Block_Buffer *buf);
-	int websocket_handshake(Block_Buffer *buf);
-	Block_Buffer *make_websocket_frame(Block_Buffer *buf, uint8_t *op = NULL);
+	//websocket第一步握手
+	int handshake(Block_Buffer *buffer);
+	//解析websocket帧头，获取buffer内容
+	Block_Buffer *get_frame_buffer(int16_t payload_length, uint8_t *masking_key, Block_Buffer *buffer);
+	//包装websocket帧头
+	Block_Buffer *make_frame_buffer(Block_Buffer *buffer, uint8_t *op = NULL);
 
 private:
 	bool connected_;

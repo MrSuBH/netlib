@@ -119,7 +119,7 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			return -1;
 		}
 
-		if (data_len == (size_t)len) {
+		if (data_len == (size_t)len) {	//正常的包，推送到逻辑层
 			front_buf->set_read_idx(rd_idx_orig);
 			recv_block_list_.pop_front();
 			block_vec.push_back(front_buf);

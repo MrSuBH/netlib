@@ -31,7 +31,7 @@ enum Event_Type {
 	WITH_IO_HEARTBEAT 	= 0x40,		/// IO附带心跳机制
 };
 
-enum {
+enum Log_Type {
 	LOG_TRACE = 0,				//打印程序运行堆栈，跟踪记录数据信息，与DEBUG相比更细致化的记录信息
 	LOG_DEBUG = 1,				//细粒度信息事件对调试应用程序是非常有帮助的
 	LOG_INFO = 2,					//消息在粗粒度级别上突出强调应用程序的运行过程
