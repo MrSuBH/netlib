@@ -91,9 +91,9 @@ struct Msg_Process_Time {
 
 class Block_Buffer;
 struct Block_Group_Info {
-	size_t free_list_size_;
-	size_t used_list_size_;
-	size_t sum_bytes_;
+	int free_list_size_;
+	int used_list_size_;
+	int sum_bytes_;
 
 	void serialize(Block_Buffer &buf);
 	void deserialize(Block_Buffer &buf);
@@ -101,9 +101,9 @@ struct Block_Group_Info {
 };
 
 struct Server_Info {
-	size_t svc_pool_free_list_size_;
-	size_t svc_pool_used_list_size_;
-	size_t svc_list_size_;
+	int svc_pool_free_list_size_;
+	int svc_pool_used_list_size_;
+	int svc_list_size_;
 	std::vector<Block_Group_Info> block_group_info_;
 
 	void serialize(Block_Buffer &buf);

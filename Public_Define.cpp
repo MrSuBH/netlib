@@ -9,15 +9,15 @@
 #include "Public_Define.h"
 
 void Block_Group_Info::serialize(Block_Buffer &buf) {
-	buf.write_uint32(free_list_size_);
-	buf.write_uint32(used_list_size_);
-	buf.write_uint32(sum_bytes_);
+	buf.write_int32(free_list_size_);
+	buf.write_int32(used_list_size_);
+	buf.write_int32(sum_bytes_);
 }
 
 void Block_Group_Info::deserialize(Block_Buffer &buf) {
-	free_list_size_ = buf.read_uint32();
-	used_list_size_ = buf.read_uint32();
-	sum_bytes_ = buf.read_uint32();
+	buf.read_int32(free_list_size_);
+	buf.read_int32(used_list_size_);
+	buf.read_int32(sum_bytes_);
 }
 
 void Block_Group_Info::reset(void) {
@@ -27,9 +27,9 @@ void Block_Group_Info::reset(void) {
 }
 
 void Server_Info::serialize(Block_Buffer &buf) {
-	buf.write_uint32(svc_pool_free_list_size_);
-	buf.write_uint32(svc_pool_used_list_size_);
-	buf.write_uint32(svc_list_size_);
+	buf.write_int32(svc_pool_free_list_size_);
+	buf.write_int32(svc_pool_used_list_size_);
+	buf.write_int32(svc_list_size_);
 
 	uint16_t s = block_group_info_.size();
 	buf.write_uint16(s);
@@ -39,13 +39,14 @@ void Server_Info::serialize(Block_Buffer &buf) {
 }
 
 void Server_Info::deserialize(Block_Buffer &buf) {
-	svc_pool_free_list_size_ = buf.read_uint32();
-	svc_pool_used_list_size_ = buf.read_uint32();
-	svc_list_size_ = buf.read_uint32();
+	buf.read_int32(svc_pool_free_list_size_);
+	buf.read_int32(svc_pool_used_list_size_);
+	buf.read_int32(svc_list_size_);
 
-	uint16_t s = buf.read_uint16();
+	uint16_t count = 0;
+	buf.read_uint16(count);
 	Block_Group_Info info;
-	for (uint16_t i = 0; i < s; ++i) {
+	for (uint16_t i = 0; i < count; ++i) {
 		info.reset();
 		info.deserialize(buf);
 		block_group_info_.push_back(info);

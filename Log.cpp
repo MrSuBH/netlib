@@ -181,7 +181,7 @@ void Log::assembly_msg(int log_flag, const char *fmt, va_list ap) {
 
 void Log::logging_file(std::ostringstream &msg_stream) {
 	Block_Buffer buf;
-	buf.make_inner_message(999999);
+	buf.make_server_message(999999, 0);
 	buf.write_int32(log_type_);
 	buf.write_int32(log_sub_type_);
 	buf.write_string(msg_stream.str());

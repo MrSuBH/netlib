@@ -93,7 +93,7 @@ int Mysql_Conn::execute_update(const char* str_sql) {
 	return ret;
 }
 
-bool Mysql_Conn::execute(const char* str_sql) {
+int Mysql_Conn::execute(const char* str_sql) {
 	int ret = 0;
 	try {
 		ret = stmt_->execute(str_sql);

@@ -106,7 +106,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 		}
 
 		rd_idx_orig = front_buf->get_read_idx();
-		cid = front_buf->read_int32();
+		front_buf->read_int32(cid);
 		if(!connected_) {
 			LIB_LOG_INFO("websocket handshake cid:%d", cid);
 			return handshake(front_buf);
@@ -116,7 +116,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			parent_->handle_close();
 			return -1;
 		}
@@ -126,24 +126,26 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 			if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 				return 0;
 			} else {
-				parent_->push_block(parent_->get_cid(), free_buf);
+				parent_->push_block(cid, free_buf);
 				continue;
 			}
 		}
 
-		tmp = front_buf->read_uint8();
+		//读取第一个字节
+		front_buf->read_uint8(tmp);
 		fin = tmp >> 7;
 		opcode = tmp & 0x0f;
 		if(opcode == OPCODE_CLOSE) { // websocket被客户端关闭
 			LIB_LOG_ERROR("websocket close cid:%d, tmp:%d,fin:%d,opcode", cid, tmp, fin, opcode);
 			recv_block_list_.pop_front();
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			parent_->handle_close();
 			return -1;
 		}
 
-		tmp = front_buf->read_uint8();
+		//读取第二个字节
+		front_buf->read_uint8(tmp);
 		mask = tmp >> 7;
 		payload_length = tmp & 0x7f;
 		if(payload_length == 126) {
@@ -152,14 +154,21 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 					return 0;
 				} else {
-					parent_->push_block(parent_->get_cid(), free_buf);
+					parent_->push_block(cid, free_buf);
 					continue;
 				}
 			}
 
-			payload_length = front_buf->read_uint16();
+			//读取包内容长度
+			front_buf->read_uint16(payload_length);
 		} else if(payload_length == 127){
-			//payload_length = front_buf->read_uint32(); //包大小不可能达到4字节整数
+			//包长度过长，丢弃
+			LIB_LOG_ERROR("websocket payload too large, cid:%d, payload_length:%d", cid, payload_length);
+			recv_block_list_.pop_front();
+			front_buf->reset();
+			parent_->push_block(cid, front_buf);
+			parent_->handle_close();
+			return -1;
 		}
 
 		if(mask == 1) {
@@ -168,24 +177,24 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 					return 0;
 				} else {
-					parent_->push_block(parent_->get_cid(), free_buf);
+					parent_->push_block(cid, free_buf);
 					continue;
 				}
 			}
 
 			for(int i = 0; i < 4; i++) {
-				masking_key[i] = front_buf->read_uint8();
+				front_buf->read_uint8(masking_key[i]);
 			}
 		}
 
 		size_t data_len = front_buf->readable_bytes();
 		//LIB_LOG_WARN("fin:%d, opcode:%d, mask:%d, payload_length:%d, data_len:%d", fin, opcode, mask, payload_length, data_len);
 		if (payload_length == 0 || payload_length > max_pack_size_) { /// 包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
-			LIB_LOG_ERROR("cid:%d data block len = %u", parent_->get_cid(), payload_length);
+			LIB_LOG_ERROR("cid:%d data block len = %u", cid, payload_length);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			parent_->handle_close();
 			return -1;
 		}
@@ -195,7 +204,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 			recv_block_list_.pop_front();
 			block_vec.push_back(data_buf);
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			continue;
 		} else {
 			if (data_len < (size_t)payload_length) {		//半包，需要合并前两个包
@@ -203,7 +212,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 					return 0;
 				} else {
-					parent_->push_block(parent_->get_cid(), free_buf);
+					parent_->push_block(cid, free_buf);
 					continue;
 				}
 			}
@@ -217,7 +226,7 @@ int Svc_Websocket::handle_pack(Block_Vector &block_vec) {
 				size_t cid_idx = front_buf->get_read_idx() - sizeof(int32_t);
 				front_buf->set_read_idx(cid_idx);
 				front_buf->set_write_idx(cid_idx);
-				front_buf->write_int32(parent_->get_cid());
+				front_buf->write_int32(cid);
 				front_buf->set_write_idx(wr_idx_orig);
 
 				continue;
@@ -306,7 +315,9 @@ Block_Buffer *Svc_Websocket::get_frame_buffer(int16_t payload_length, uint8_t *m
 
 	for(int i = 0; i < payload_length; i++){
 		int j = i % 4;
-		char data = buffer->read_uint8() ^ masking_key[j];
+		uint8_t v = 0;
+		buffer->read_uint8(v);
+		char data = v ^ masking_key[j];
 		data_buf->write_uint8(data);
 	}
 	return data_buf;

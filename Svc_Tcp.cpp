@@ -75,7 +75,7 @@ int Svc_Tcp::handle_send(void) {
 int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 	size_t rd_idx_orig = 0;
 	int32_t cid = 0;
-	uint16_t len = 0;
+	int16_t len = 0;
 	Block_Buffer *front_buf = 0;
 	Block_Buffer *free_buf = 0;
 
@@ -87,12 +87,12 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 		}
 
 		rd_idx_orig = front_buf->get_read_idx();
-		cid = front_buf->read_int32();
+		front_buf->read_int32(cid);
 		if (front_buf->readable_bytes() <= 0) { //数据块异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			parent_->handle_close();
 			return -1;
 		}
@@ -102,48 +102,46 @@ int Svc_Tcp::handle_pack(Block_Vector &block_vec) {
 			if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 				return 0;
 			} else {
-				parent_->push_block(parent_->get_cid(), free_buf);
+				parent_->push_block(cid, free_buf);
 				continue;
 			}
 		}
 
-		len = front_buf->peek_uint16();
-		size_t data_len = front_buf->readable_bytes() - sizeof(len);
-		if (len == 0 || len > max_pack_size_) { //包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
+		front_buf->peek_int16(len);
+		int data_len = front_buf->readable_bytes() - sizeof(len);
+		if (len == 0 || len > (int)max_pack_size_) { //包长度标识为0, 包长度标识超过max_pack_size_, 即视为无效包, 异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d data block len = %u", cid, parent_->get_fd(), len);
 			front_buf->log_binary_data(512);
 			recv_block_list_.pop_front();
 			front_buf->reset();
-			parent_->push_block(parent_->get_cid(), front_buf);
+			parent_->push_block(cid, front_buf);
 			parent_->handle_close();
 			return -1;
 		}
 
-		if (data_len == (size_t)len) {	//正常的包，推送到逻辑层
+		if (data_len == len) {	//正常的包，推送到逻辑层
 			front_buf->set_read_idx(rd_idx_orig);
 			recv_block_list_.pop_front();
 			block_vec.push_back(front_buf);
 			continue;
 		} else {
-			if (data_len < (size_t)len) {	//半包，需要合并前两个包
+			if (data_len < len) {	//半包，需要合并前两个包
 				front_buf->set_read_idx(rd_idx_orig);
 				if ((free_buf = recv_block_list_.merge_first_second()) == 0) {
 					return 0;
 				} else {
-					parent_->push_block(parent_->get_cid(), free_buf);
+					parent_->push_block(cid, free_buf);
 					continue;
 				}
 			}
 
 			if (data_len > len) { //粘包，需要分包
-				int cid = parent_->get_cid();
 				size_t wr_idx_orig = front_buf->get_write_idx();
 
 				Block_Buffer *data_buf = parent_->pop_block(cid);
 				data_buf->reset();
 				data_buf->write_int32(cid);
 				data_buf->copy(front_buf->get_read_ptr(), sizeof(len) + len);
-
 				block_vec.push_back(data_buf);
 
 				size_t cid_idx = front_buf->get_read_idx() + sizeof(len) + len - sizeof(int32_t);

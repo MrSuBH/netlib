@@ -145,7 +145,7 @@ int Time_Value::serialize(Block_Buffer &buffer) const {
 }
 
 int Time_Value::deserialize(Block_Buffer &buffer) {
-	tv_.tv_sec = buffer.read_int64();
-	tv_.tv_usec = buffer.read_int64();
+	buffer.read_int64(tv_.tv_sec);
+	buffer.read_int64(tv_.tv_usec);
 	return 0;
 }

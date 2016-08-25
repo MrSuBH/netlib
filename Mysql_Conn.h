@@ -40,7 +40,7 @@ public:
 
 	sql::ResultSet* execute_query(const char* str_sql);
 	int execute_update(const char* str_sql);
-	bool execute(const char* str_sql);
+	int execute(const char* str_sql);
 
 private:
 	Mysql_Pool* mysql_pool_;

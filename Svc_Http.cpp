@@ -62,7 +62,7 @@ int Svc_Http::handle_pack(Block_Vector &block_vec) {
 			continue;
 		}
 
-		cid = front_buf->read_int32();
+		front_buf->read_int32(cid);
 		if (front_buf->readable_bytes() <= 0) { /// 数据块异常, 关闭该连接
 			LIB_LOG_ERROR("cid:%d fd:%d, data block read bytes<0", cid, parent_->get_fd());
 			recv_block_list_.pop_front();
@@ -87,7 +87,8 @@ int Svc_Http::handle_pack(Block_Vector &block_vec) {
 }
 
 void Svc_Http::make_http_head(Block_Buffer *buf) {
-	std::string str_content = buf->read_string();
+	std::string str_content = "";
+	buf->read_string(str_content);
 	int content_len = str_content.length();
   char str_http[1024];
   snprintf(str_http, 1024, HTTP_RESPONSE_HTML, content_len, str_content.c_str());
