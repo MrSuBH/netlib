@@ -78,17 +78,6 @@ struct Data_Info {
 	char* data;
 } ;
 
-struct Msg_Process_Time {
-	int msg_id;
-	int times;
-	Time_Value tv;
-	Msg_Process_Time(void) : msg_id(0), times(0) {}
-	void add_time(Time_Value &process_tv) {;
-		tv += process_tv;
-		times++;
-	}
-};
-
 class Block_Buffer;
 struct Block_Group_Info {
 	int free_list_size_;

@@ -20,13 +20,7 @@
 Log::Log(void):
   log_type_(0),
   log_sub_type_(0),
-  file_switcher_(false),
-  msg_time_(2000)
-{
-	Time_Value now = Time_Value::gettimeofday();
-	get_zero_time(now, show_time_);
-	show_time_ += Time_Value(3600 + random()%120);
-}
+  file_switcher_(false) {}
 
 Log::~Log(void) { }
 
@@ -196,35 +190,4 @@ int Log::logging_db(Block_Buffer &buf) {
 
 void Log::free_cache(void) {
 	LOG_CONNECTOR->free_cache();
-}
-
-void Log::msg_time(int msg_id, Time_Value &time) {
-	msg_time_[msg_id].add_time(time);
-}
-
-void Log::show_msg_time(Time_Value &now) {
-	if (now < show_time_) return ;
-
-	show_msg_time();
-	show_time_ += Time_Value(86400);
-}
-
-struct Msg_Time_Sort_Struct {
-	bool operator() (Msg_Process_Time elem1, Msg_Process_Time elem2) const {
-		return elem1.tv > elem2.tv;
-	}
-};
-
-void Log::show_msg_time(void) {
-	Msg_Process_Time_Vec msg_time_vec;
-	for (Msg_Process_Time_Map::iterator it = msg_time_.begin(); it != msg_time_.end(); ++it) {
-		it->second.msg_id = it->first;
-		msg_time_vec.push_back(it->second);
-	}
-
-	std::sort(msg_time_vec.begin(), msg_time_vec.end(), Msg_Time_Sort_Struct());
-	for (Msg_Process_Time_Vec::iterator it = msg_time_vec.begin(); it != msg_time_vec.end(); ++it) {
-		double avg = (*it).times ? (*it).tv.sec()/(*it).times : 0.0;
-		LOG_DEBUG("msg process time msg_id = %d, times = %d sec = %ld usec = %ld avg:%ld", (*it).msg_id, (*it).times, (*it).tv.sec(), (*it).tv.usec(), avg);
-	}
 }
